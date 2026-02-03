@@ -4,11 +4,18 @@ FROM ubuntu:22.04 AS builder
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    cmake \
     python3 \
     python3-pip \
     git \
+    wget \
     && rm -rf /var/lib/apt/lists/*
+
+# Install CMake 3.28 (Ubuntu 22.04 has old CMake that doesn't support preset version 6)
+RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.tar.gz \
+    && tar -xzf cmake-3.28.3-linux-x86_64.tar.gz -C /opt \
+    && ln -s /opt/cmake-3.28.3-linux-x86_64/bin/cmake /usr/local/bin/cmake \
+    && ln -s /opt/cmake-3.28.3-linux-x86_64/bin/ctest /usr/local/bin/ctest \
+    && rm cmake-3.28.3-linux-x86_64.tar.gz
 
 # Install Conan
 RUN pip3 install conan
