@@ -54,8 +54,9 @@ WORKDIR /app
 COPY --from=builder /app/build/build/Release/qf_gateway /app/
 COPY --from=builder /app/build/build/Release/qf_sender /app/
 
-# Copy config files
+# Copy config files and FIX data dictionary
 COPY config/ /app/config/
+COPY fix/ /app/fix/
 
 # Create log directory
 RUN mkdir -p /app/config/log /app/config/store
