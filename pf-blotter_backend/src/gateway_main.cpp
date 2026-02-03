@@ -1,5 +1,6 @@
 #include <atomic>
 #include <chrono>
+#include <csignal>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -9,6 +10,16 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+
+// Global shutdown flag for signal handling
+namespace {
+std::atomic<bool> g_shutdown{false};
+
+void signalHandler(int signum) {
+    (void)signum;  // Unused
+    g_shutdown.store(true);
+}
+}  // namespace
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
 #include <quickfix/SessionSettings.h>
@@ -341,14 +352,23 @@ int main(int argc, char** argv) {
         fillSim.start();
         marketFeed.start();
         acceptor.start();
+        // Register signal handlers for graceful shutdown
+        std::signal(SIGINT, signalHandler);
+        std::signal(SIGTERM, signalHandler);
+        
         if (log) {
             log->info("gateway started (fix_cfg={}, http_port={})", cfgPath, httpPort);
         }
         std::cout << "[GATEWAY] running (FIX cfg: " << cfgPath
-                  << ", HTTP port: " << httpPort << ")\nPress ENTER to quit." << std::endl;
-        std::string line;
-        std::getline(std::cin, line);
+                  << ", HTTP port: " << httpPort << ")" << std::endl;
+        std::cout << "[GATEWAY] Send SIGINT or SIGTERM to stop." << std::endl;
         
+        // Wait for shutdown signal (container-friendly)
+        while (!g_shutdown.load()) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        
+        std::cout << "[GATEWAY] Shutdown signal received." << std::endl;
         audit.logSystemEvent("GATEWAY_STOP", "Gateway shutting down");
         acceptor.stop();
         marketFeed.stop();
