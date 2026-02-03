@@ -1,0 +1,6 @@
+build/
+build-debug/
+CMakeUserPresets.json
+.git/
+.gitignore
+*.log

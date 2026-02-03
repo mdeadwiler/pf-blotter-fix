@@ -1,0 +1,17 @@
+# Build artifacts
+/build/
+/build-debug/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/compile_commands.json
+/CMakeUserPresets.json
+
+# Logs and stores (keep folders)
+/config/log/*
+!/config/log/.gitkeep
+/config/store/*
+!/config/store/.gitkeep
+
+# OS
+.DS_Store

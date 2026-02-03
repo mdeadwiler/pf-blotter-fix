@@ -1,0 +1,139 @@
+# PF-Blotter
+
+A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infrastructure skills.
+
+## Features
+
+- **FIX 4.4 Protocol** - Full NewOrderSingle, OrderCancelRequest, ExecutionReport support
+- **Real-Time Streaming** - Server-Sent Events (SSE) for live order updates
+- **Partial Fills** - Realistic execution simulation with chunked fills
+- **Pre-Trade Risk Controls** - Max quantity (10,000), max notional ($1M), duplicate detection
+- **Order Book Visualization** - Simulated bid/ask depth chart
+- **Market Data Feed** - Live price ticks streaming at 4Hz
+- **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)
+- **Position Tracking** - P&L calculation per symbol
+- **Audit Log** - Append-only compliance logging
+- **Docker Deployment** - One-command containerized setup
+
+## Tech Stack
+
+### Backend (C++20)
+- QuickFIX 1.15.1 - FIX protocol engine
+- cpp-httplib - HTTP server with SSE support
+- nlohmann/json - JSON serialization
+- spdlog - Structured logging
+- GTest - Unit testing
+
+### Frontend (React)
+- React 18 + TypeScript
+- Vite - Build tooling
+- TailwindCSS - Styling
+- Server-Sent Events - Real-time updates
+
+### DevOps
+- Docker + Docker Compose
+- GitHub Actions CI/CD
+- Conan 2 - C++ package management
+- CMake - Build system
+
+## Quick Start
+
+### Local Development
+
+**Backend:**
+```bash
+cd pf-blotter_backend
+conan install . --build=missing -of=build -s build_type=Release
+cmake --preset conan-release
+cmake --build --preset conan-release
+
+# Start gateway
+./build/build/Release/qf_gateway config/acceptor.cfg 8080
+```
+
+**Frontend:**
+```bash
+cd pf-blotter_frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173
+
+### Docker Deployment
+
+```bash
+docker compose up --build
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+
+## Usage
+
+### Dashboard
+1. Sign in (mock auth)
+2. Use the order form to submit orders
+3. Watch real-time updates in the blotter
+4. Click "Cancel" on open orders to cancel
+
+### CLI Sender (Optional)
+```bash
+./build/build/Release/qf_sender config/initiator.cfg
+
+# Commands:
+nos <clOrdId> <symbol> <Buy|Sell> <qty> <price>
+cancel <origClOrdId> <cancelClOrdId>
+quit
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/snapshot` | GET | Current order state |
+| `/events` | GET | SSE stream for order updates |
+| `/marketdata` | GET | SSE stream for price ticks |
+| `/orderbook` | GET | Order book for symbol |
+| `/stats` | GET | Performance statistics |
+| `/order` | POST | Submit new order |
+| `/cancel` | POST | Cancel order |
+
+## Project Structure
+
+```
+PubFix/
+├── pf-blotter_backend/
+│   ├── include/qfblotter/    # Headers
+│   ├── src/                  # Implementation
+│   ├── tests/                # Unit tests
+│   ├── config/               # FIX & logging config
+│   └── Dockerfile
+├── pf-blotter_frontend/
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── hooks/            # Custom hooks
+│   │   └── utils/            # Utilities
+│   └── Dockerfile
+├── docker-compose.yml
+└── .github/workflows/ci.yml
+```
+
+## Testing
+
+**Backend:**
+```bash
+cd pf-blotter_backend
+ctest --preset conan-release --output-on-failure
+```
+
+**Frontend:**
+```bash
+cd pf-blotter_frontend
+npm run build  # Type checking
+```
+
+## License
+
+MIT

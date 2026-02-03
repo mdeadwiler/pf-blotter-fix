@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # Build and test C++ backend
+  backend:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: pf-blotter_backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake python3 python3-pip
+
+      - name: Install Conan
+        run: |
+          pip3 install conan
+          conan profile detect
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-${{ runner.os }}-${{ hashFiles('pf-blotter_backend/conanfile.py') }}
+          restore-keys: |
+            conan-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: conan install . --build=missing -of=build -s build_type=Release
+
+      - name: Configure
+        run: cmake --preset conan-release
+
+      - name: Build
+        run: cmake --build --preset conan-release
+
+      - name: Run tests
+        run: ctest --preset conan-release --output-on-failure
+
+  # Build and test React frontend
+  frontend:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: pf-blotter_frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: pf-blotter_frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run build -- --mode production
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ''
+
+  # Docker build test
+  docker:
+    runs-on: ubuntu-22.04
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker compose build
+
+  # Lint check
+  lint:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: pf-blotter_frontend
+        run: npm ci
+
+      - name: ESLint check
+        working-directory: pf-blotter_frontend
+        run: npm run lint --if-present
+        continue-on-error: true
