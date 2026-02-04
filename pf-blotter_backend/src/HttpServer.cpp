@@ -9,6 +9,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include <httplib.h>
 #include <nlohmann/json.hpp>
@@ -61,12 +62,66 @@ std::string sse_market_frame(const std::string& data) {
     return "event: marketdata\ndata: " + data + "\n\n";
 }
 
+// Simple rate limiter - tracks requests per IP
+class RateLimiter {
+public:
+    RateLimiter(int maxRequests, int windowSeconds)
+        : maxRequests_(maxRequests), windowMs_(windowSeconds * 1000) {}
+
+    bool allow(const std::string& ip) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+        auto& record = records_[ip];
+        
+        // Remove old entries outside the window
+        auto windowStart = now - std::chrono::milliseconds(windowMs_);
+        while (!record.empty() && record.front() < windowStart) {
+            record.pop_front();
+        }
+        
+        // Check if under limit
+        if (static_cast<int>(record.size()) >= maxRequests_) {
+            return false;
+        }
+        
+        // Record this request
+        record.push_back(now);
+        return true;
+    }
+
+    // Cleanup old entries periodically
+    void cleanup() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+        auto windowStart = now - std::chrono::milliseconds(windowMs_);
+        
+        for (auto it = records_.begin(); it != records_.end();) {
+            while (!it->second.empty() && it->second.front() < windowStart) {
+                it->second.pop_front();
+            }
+            if (it->second.empty()) {
+                it = records_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+private:
+    int maxRequests_;
+    int windowMs_;
+    std::mutex mutex_;
+    std::unordered_map<std::string, std::deque<std::chrono::steady_clock::time_point>> records_;
+};
+
 }  // namespace
 
 class HttpServer::Impl {
 public:
     Impl(int port, SnapshotProvider snapshotProvider)
-        : port_(port), snapshotProvider_(std::move(snapshotProvider)) {
+        : port_(port), snapshotProvider_(std::move(snapshotProvider)),
+          orderRateLimiter_(60, 60),   // 60 orders per minute per IP
+          cancelRateLimiter_(30, 60) { // 30 cancels per minute per IP
         
         // CORS middleware for all requests
         server_.set_default_headers({
@@ -81,15 +136,22 @@ public:
         });
 
         server_.Get("/health", [](const httplib::Request&, httplib::Response& res) {
-            res.set_content("ok", "text/plain");
+            res.set_content("{\"status\":\"ok\"}", "application/json");
         });
 
         server_.Get("/snapshot", [this](const httplib::Request&, httplib::Response& res) {
             res.set_content(snapshotProvider_(), "application/json");
         });
 
-        // POST /order - Submit new order
+        // POST /order - Submit new order (rate limited)
         server_.Post("/order", [this](const httplib::Request& req, httplib::Response& res) {
+            // Rate limiting check
+            if (!orderRateLimiter_.allow(req.remote_addr)) {
+                res.status = 429;
+                res.set_content(R"({"error":"Rate limit exceeded. Max 60 orders/minute."})", "application/json");
+                return;
+            }
+
             if (!orderHandler_) {
                 res.status = 501;
                 res.set_content(R"({"error":"Order handler not configured"})", "application/json");
@@ -125,8 +187,15 @@ public:
             }
         });
 
-        // POST /cancel - Cancel order
+        // POST /cancel - Cancel order (rate limited)
         server_.Post("/cancel", [this](const httplib::Request& req, httplib::Response& res) {
+            // Rate limiting check
+            if (!cancelRateLimiter_.allow(req.remote_addr)) {
+                res.status = 429;
+                res.set_content(R"({"error":"Rate limit exceeded. Max 30 cancels/minute."})", "application/json");
+                return;
+            }
+
             if (!cancelHandler_) {
                 res.status = 501;
                 res.set_content(R"({"error":"Cancel handler not configured"})", "application/json");
@@ -310,6 +379,8 @@ private:
     std::thread thread_;
     SseBroker broker_;
     SseBroker marketBroker_;  // Separate broker for market data
+    RateLimiter orderRateLimiter_;   // Rate limiter for order submissions
+    RateLimiter cancelRateLimiter_;  // Rate limiter for cancel requests
 };
 
 HttpServer::HttpServer(int port, SnapshotProvider snapshotProvider)
