@@ -42,17 +42,22 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 - **Cost Modeling** - Commission per trade, slippage in basis points
 - **Equity & Drawdown Curves** - Visual P&L and risk progression
 
-### Analytics
+### Quantitative Analytics
+- **Portfolio Optimizer** - Markowitz mean-variance optimization with efficient frontier
+- **Options Pricer** - Black-Scholes with full Greeks (Delta, Gamma, Theta, Vega, Rho)
+- **Implied Volatility** - Newton-Raphson IV solver from market prices
+- **Monte Carlo VaR** - 10,000-path simulation for Value at Risk & CVaR (Expected Shortfall)
+- **Kelly Criterion** - Optimal position sizing with growth rate visualization
 - **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)
 - **Position Tracking** - Real-time P&L calculation per symbol
-- **Audit Log** - Append-only compliance logging
-- **Algo Statistics** - Trade count, position, signal history
 
-### UX Polish
+### UX Polish (Bloomberg-style)
+- **Tabbed Interface** - Trading / Algo Execution / Backtesting / Analytics
 - **Toast Notifications** - Visual feedback on order fills/rejects
 - **Sound Effects** - Audio cues for fills, rejects, cancels (toggle with S key)
 - **Dark/Light Theme** - Accessibility-friendly themes (toggle with T key)
-- **Keyboard Shortcuts** - N=new order, Esc=unfocus, S=sound, T=theme
+- **Keyboard Shortcuts** - N=order, 1-4=tabs, S=sound, T=theme, Esc=unfocus
+- **Error Boundaries** - Graceful component error handling
 - **Mobile Responsive** - Works on phones and tablets
 
 ## Tech Stack
@@ -113,9 +118,11 @@ docker compose up --build
 
 ### Dashboard
 1. Sign in (mock auth)
-2. Use the order form to submit orders
-3. Watch real-time updates in the blotter
-4. Click "Cancel" on open orders to cancel
+2. **Trading Tab** - Submit orders, view blotter, track positions
+3. **Algo Execution Tab** - Run VWAP/TWAP, configure strategies
+4. **Backtesting Tab** - Simulate strategies with risk metrics
+5. **Analytics Tab** - Portfolio optimization, options pricing, VaR
+6. Use keyboard shortcuts (press 1-4 to switch tabs)
 
 ### CLI Sender (Optional)
 ```bash
