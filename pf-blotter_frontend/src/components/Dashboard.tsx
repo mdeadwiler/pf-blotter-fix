@@ -34,7 +34,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-neon-cyan neon-text">
-                PF-BLOTTER
+                QuantBlotterSim
               </h1>
               <span className="text-xs text-gray-500 bg-dark-700 px-2 py-1 rounded">
                 FIX 4.4

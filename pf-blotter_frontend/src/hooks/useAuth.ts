@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { User, AuthState } from '../types/order';
 
-const STORAGE_KEY = 'pf_blotter_auth';
+const STORAGE_KEY = 'quantblottersim_auth';
 
 interface UseAuthReturn extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
@@ -12,7 +12,7 @@ interface UseAuthReturn extends AuthState {
 }
 
 // Mock user storage (in production, this would be a real backend)
-const MOCK_USERS_KEY = 'pf_blotter_users';
+const MOCK_USERS_KEY = 'quantblottersim_users';
 
 function getMockUsers(): Record<string, { password: string; user: User }> {
   try {
@@ -105,8 +105,14 @@ export function useAuth(): UseAuthReturn {
         return false;
       }
 
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters');
+      if (name.trim().length < 3) {
+        setError('Name must be at least 3 characters');
+        setIsLoading(false);
+        return false;
+      }
+
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters');
         setIsLoading(false);
         return false;
       }

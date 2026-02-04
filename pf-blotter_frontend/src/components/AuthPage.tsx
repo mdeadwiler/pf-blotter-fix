@@ -39,8 +39,13 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
       return;
     }
 
-    if (signupPassword.length < 6) {
-      setSignupError('Password must be at least 6 characters');
+    if (signupName.trim().length < 3) {
+      setSignupError('Name must be at least 3 characters');
+      return;
+    }
+
+    if (signupPassword.length < 8) {
+      setSignupError('Password must be at least 8 characters');
       return;
     }
 
@@ -60,9 +65,9 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-neon-cyan neon-text mb-2">
-            PF-BLOTTER
+            QuantBlotterSim
           </h1>
-          <p className="text-gray-400">FIX 4.4 Order Gateway & Live Blotter</p>
+          <p className="text-gray-400">FIX 4.4 Order Gateway Simulator & Live Blotter</p>
         </div>
 
         {/* Auth containers */}
