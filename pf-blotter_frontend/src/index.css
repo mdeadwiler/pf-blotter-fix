@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -24,67 +24,93 @@ body {
   min-height: 100vh;
 }
 
+/* Use monospace for numbers and code */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #12121a;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2a38;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a48;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Status colors */
 .status-new {
-  color: #00f5ff;
-  text-shadow: 0 0 10px #00f5ff40;
+  color: #22d3ee;
 }
 
 .status-filled {
-  color: #39ff14;
-  text-shadow: 0 0 10px #39ff1440;
+  color: #34d399;
 }
 
 .status-rejected {
-  color: #ff3131;
-  text-shadow: 0 0 10px #ff313140;
+  color: #f87171;
 }
 
 .status-canceled {
-  color: #888888;
+  color: #6b7280;
 }
 
 .status-partial {
-  color: #ffd700;
-  text-shadow: 0 0 10px #ffd70040;
+  color: #fbbf24;
 }
 
 /* Side colors */
 .side-buy {
-  color: #39ff14;
+  color: #34d399;
 }
 
 .side-sell {
-  color: #ff3131;
+  color: #f87171;
+}
+
+/* Glass card effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
 }
 
 /* Neon glow effects */
 .neon-border {
-  border: 1px solid #00f5ff40;
-  box-shadow: 0 0 10px #00f5ff20, inset 0 0 10px #00f5ff10;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.05);
 }
 
 .neon-text {
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: 0 0 20px currentColor;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #22d3ee 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Table row animation */
@@ -106,10 +132,10 @@ body {
 /* Connection indicator pulse */
 @keyframes pulse-connected {
   0%, 100% {
-    box-shadow: 0 0 0 0 #39ff1480;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px #39ff1400;
+    box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
   }
 }
 
@@ -133,7 +159,36 @@ body {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Light theme overrides - comprehensive accessibility fixes */
+/* Subtle shimmer for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Input focus ring */
+input:focus, select:focus, button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Light theme overrides */
 .light-theme {
   color-scheme: light;
   color: #1a1a2e;
@@ -150,27 +205,32 @@ body {
 
 /* Background colors */
 .light-theme .bg-dark-900,
-.light-theme .bg-dark-900\/80 {
-  background-color: #f8f9fa !important;
+.light-theme .bg-gradient-to-br {
+  background: linear-gradient(to bottom right, #f0f2f5, #e8eaed, #f0f2f5) !important;
 }
 
 .light-theme .bg-dark-800,
 .light-theme .bg-dark-800\/50,
-.light-theme .bg-dark-800\/80 {
-  background-color: #ffffff !important;
+.light-theme .bg-dark-800\/80,
+.light-theme .bg-black\/40,
+.light-theme .bg-black\/20,
+.light-theme .bg-black\/30,
+.light-theme .bg-black\/60,
+.light-theme .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .light-theme .bg-dark-700 {
   background-color: #f0f1f3 !important;
 }
 
-.light-theme .bg-dark-600 {
-  background-color: #e8e9eb !important;
-}
-
-/* Text colors - high contrast for accessibility */
+/* Text colors */
 .light-theme .text-white {
   color: #1a1a2e !important;
+}
+
+.light-theme .text-gray-300 {
+  color: #3a3a4a !important;
 }
 
 .light-theme .text-gray-400 {
@@ -185,151 +245,96 @@ body {
   color: #6a6a7a !important;
 }
 
-.light-theme .placeholder-gray-500::placeholder {
-  color: #8a8a9a !important;
-}
-
-/* Neon colors - darker for light theme readability */
+/* Neon colors - darker for light theme */
+.light-theme .text-cyan-400,
 .light-theme .text-neon-cyan {
-  color: #0088aa !important;
-  text-shadow: none;
+  color: #0891b2 !important;
 }
 
+.light-theme .text-emerald-400,
 .light-theme .text-neon-green {
-  color: #00873c !important;
-  text-shadow: none;
+  color: #059669 !important;
 }
 
+.light-theme .text-red-400,
 .light-theme .text-neon-red {
-  color: #cc2222 !important;
-  text-shadow: none;
+  color: #dc2626 !important;
 }
 
+.light-theme .text-amber-400,
 .light-theme .text-neon-yellow {
-  color: #aa7700 !important;
-  text-shadow: none;
+  color: #d97706 !important;
 }
 
-.light-theme .neon-text {
-  text-shadow: none;
-}
-
-/* Status colors - darker for light theme */
+/* Status colors for light theme */
 .light-theme .status-new {
-  color: #0088aa !important;
-  text-shadow: none;
+  color: #0891b2 !important;
 }
 
 .light-theme .status-filled {
-  color: #00873c !important;
-  text-shadow: none;
+  color: #059669 !important;
 }
 
 .light-theme .status-rejected {
-  color: #cc2222 !important;
-  text-shadow: none;
-}
-
-.light-theme .status-canceled {
-  color: #666666 !important;
+  color: #dc2626 !important;
 }
 
 .light-theme .status-partial {
-  color: #aa7700 !important;
-  text-shadow: none;
+  color: #d97706 !important;
 }
 
-/* Side colors - darker for light theme */
 .light-theme .side-buy {
-  color: #00873c !important;
+  color: #059669 !important;
 }
 
 .light-theme .side-sell {
-  color: #cc2222 !important;
+  color: #dc2626 !important;
 }
 
 /* Border colors */
-.light-theme .border-dark-500 {
-  border-color: #d0d0d8 !important;
-}
-
+.light-theme .border-white\/5,
+.light-theme .border-white\/10,
 .light-theme .border-dark-600 {
-  border-color: #e0e0e8 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 .light-theme .neon-border {
-  border-color: #0088aa40 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.light-theme .divide-dark-600 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e0e0e8;
-}
-
-.light-theme .divide-dark-700 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #f0f0f3;
+  border-color: rgba(8, 145, 178, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Input fields */
 .light-theme input,
 .light-theme select {
   background-color: #ffffff !important;
-  border-color: #c0c0c8 !important;
+  border-color: #d1d5db !important;
   color: #1a1a2e !important;
 }
 
 .light-theme input:focus,
 .light-theme select:focus {
-  border-color: #0088aa !important;
-}
-
-.light-theme input:disabled,
-.light-theme select:disabled {
-  background-color: #f0f0f3 !important;
-  color: #8a8a9a !important;
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2) !important;
 }
 
 /* Buttons */
-.light-theme button {
-  color: #1a1a2e;
-}
-
-.light-theme .bg-neon-cyan {
-  background-color: #0088aa !important;
+.light-theme .bg-cyan-500,
+.light-theme .bg-gradient-to-r.from-cyan-500 {
+  background: linear-gradient(135deg, #0891b2 0%, #0d9488 100%) !important;
   color: #ffffff !important;
 }
 
-.light-theme .bg-neon-green\/20 {
-  background-color: rgba(0, 135, 60, 0.15) !important;
+.light-theme .bg-emerald-500,
+.light-theme .bg-gradient-to-r.from-emerald-500 {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
 }
 
-.light-theme .bg-neon-red\/20 {
-  background-color: rgba(204, 34, 34, 0.15) !important;
-}
-
-.light-theme .bg-neon-cyan\/20 {
-  background-color: rgba(0, 136, 170, 0.15) !important;
-}
-
-.light-theme .bg-neon-yellow\/20 {
-  background-color: rgba(170, 119, 0, 0.15) !important;
-}
-
-/* Toast borders for light theme */
-.light-theme .border-neon-green {
-  border-color: #00873c !important;
-}
-
-.light-theme .border-neon-red {
-  border-color: #cc2222 !important;
-}
-
-.light-theme .border-neon-cyan {
-  border-color: #0088aa !important;
-}
-
-.light-theme .border-neon-yellow {
-  border-color: #aa7700 !important;
+/* Gradient text for light theme */
+.light-theme .bg-gradient-to-r.from-cyan-400.to-emerald-400 {
+  background: linear-gradient(135deg, #0891b2 0%, #059669 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 /* Table styling */
@@ -346,14 +351,21 @@ body {
 }
 
 /* Backdrop blur fix */
-.light-theme .backdrop-blur,
+.light-theme .backdrop-blur-xl,
 .light-theme .backdrop-blur-sm {
-  background-color: rgba(248, 249, 250, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Keyboard shortcuts kbd styling */
+/* Card backgrounds */
+.light-theme .glass-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Keyboard shortcuts */
 .light-theme kbd {
-  background-color: #e8e9eb !important;
+  background-color: #e5e7eb !important;
+  border-color: #d1d5db !important;
   color: #4a4a5a !important;
 }
 

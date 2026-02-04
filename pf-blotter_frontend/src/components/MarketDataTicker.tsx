@@ -57,30 +57,38 @@ export function MarketDataTicker() {
   }
 
   return (
-    <div className="bg-dark-800/50 border-b border-dark-600 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 py-2">
+    <div className="bg-black/30 backdrop-blur-sm border-b border-white/5 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 py-2.5">
         <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide">
-          <span className="text-xs text-gray-500 uppercase whitespace-nowrap">Live</span>
+          <span className="flex items-center gap-2 text-xs text-gray-500 uppercase whitespace-nowrap">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Live
+          </span>
           {tickArray.map((tick) => (
             <div 
               key={tick.symbol} 
-              className="flex items-center gap-2 whitespace-nowrap"
+              className="flex items-center gap-2 whitespace-nowrap px-3 py-1 bg-white/5 rounded-lg border border-white/5"
             >
-              <span className="text-sm font-medium text-gray-300">{tick.symbol}</span>
-              <span className={`text-sm font-mono ${
+              <span className="text-sm font-semibold text-white">{tick.symbol}</span>
+              <span className={`text-sm font-mono font-medium ${
                 tick.change && tick.change > 0 
-                  ? 'text-neon-green' 
+                  ? 'text-emerald-400' 
                   : tick.change && tick.change < 0 
-                    ? 'text-neon-red' 
-                    : 'text-white'
+                    ? 'text-red-400' 
+                    : 'text-gray-300'
               }`}>
                 {formatPrice(tick.price)}
               </span>
               {tick.change !== undefined && tick.change !== 0 && (
-                <span className={`text-xs ${
-                  tick.change > 0 ? 'text-neon-green' : 'text-neon-red'
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  tick.change > 0 
+                    ? 'text-emerald-400 bg-emerald-500/10' 
+                    : 'text-red-400 bg-red-500/10'
                 }`}>
-                  {tick.change > 0 ? '+' : ''}{tick.change.toFixed(2)}
+                  {tick.change > 0 ? '▲' : '▼'} {Math.abs(tick.change).toFixed(2)}
                 </span>
               )}
             </div>

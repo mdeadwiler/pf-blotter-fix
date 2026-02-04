@@ -75,50 +75,64 @@ export function PositionTracker({ orders, currentPrices: _currentPrices }: Posit
   const totalRealizedPnl = positions.reduce((sum, p) => sum + p.realizedPnl, 0);
 
   return (
-    <div className="bg-dark-800 rounded-lg p-4 neon-border mt-4">
-      <h3 className="text-lg font-medium text-white flex items-center gap-2 mb-4">
-        <svg className="w-5 h-5 text-neon-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        Positions
+    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+      <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center">
+            <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          Positions
+        </h3>
         {totalRealizedPnl !== 0 && (
-          <span className={`ml-auto text-sm ${totalRealizedPnl >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+          <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
+            totalRealizedPnl >= 0 
+              ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' 
+              : 'text-red-400 bg-red-500/10 border border-red-500/20'
+          }`}>
             P&L: {totalRealizedPnl >= 0 ? '+' : ''}{formatPrice(totalRealizedPnl)}
           </span>
         )}
-      </h3>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-dark-600">
-              <th className="px-2 py-2 text-left text-xs text-gray-500 uppercase">Symbol</th>
-              <th className="px-2 py-2 text-right text-xs text-gray-500 uppercase">Position</th>
-              <th className="px-2 py-2 text-right text-xs text-gray-500 uppercase">Avg Cost</th>
-              <th className="px-2 py-2 text-right text-xs text-gray-500 uppercase">Notional</th>
-              <th className="px-2 py-2 text-right text-xs text-gray-500 uppercase">Real. P&L</th>
+            <tr className="bg-white/[0.02] border-b border-white/5">
+              <th className="px-4 py-3 text-left text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Symbol</th>
+              <th className="px-4 py-3 text-right text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Position</th>
+              <th className="px-4 py-3 text-right text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Avg Cost</th>
+              <th className="px-4 py-3 text-right text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Notional</th>
+              <th className="px-4 py-3 text-right text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Real. P&L</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-dark-700">
+          <tbody className="divide-y divide-white/5">
             {positions.map((pos) => (
-              <tr key={pos.symbol} className="hover:bg-dark-700/50">
-                <td className="px-2 py-2 font-medium text-white">{pos.symbol}</td>
-                <td className={`px-2 py-2 text-right font-mono ${
-                  pos.netQty > 0 ? 'text-neon-green' : pos.netQty < 0 ? 'text-neon-red' : 'text-gray-400'
+              <tr key={pos.symbol} className="hover:bg-white/[0.02] transition-colors">
+                <td className="px-4 py-3 font-semibold text-white">{pos.symbol}</td>
+                <td className={`px-4 py-3 text-right font-mono font-medium ${
+                  pos.netQty > 0 ? 'text-emerald-400' : pos.netQty < 0 ? 'text-red-400' : 'text-gray-500'
                 }`}>
                   {pos.netQty > 0 ? '+' : ''}{formatQuantity(pos.netQty)}
-                  <span className="text-xs text-gray-500 ml-1">
+                  <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded ${
+                    pos.netQty > 0 
+                      ? 'text-emerald-400 bg-emerald-500/10' 
+                      : pos.netQty < 0 
+                        ? 'text-red-400 bg-red-500/10' 
+                        : 'text-gray-500 bg-gray-500/10'
+                  }`}>
                     {pos.netQty > 0 ? 'LONG' : pos.netQty < 0 ? 'SHORT' : 'FLAT'}
                   </span>
                 </td>
-                <td className="px-2 py-2 text-right font-mono text-gray-300">
+                <td className="px-4 py-3 text-right font-mono text-gray-300">
                   {formatPrice(pos.avgCost)}
                 </td>
-                <td className="px-2 py-2 text-right font-mono text-gray-300">
+                <td className="px-4 py-3 text-right font-mono text-gray-300">
                   {formatPrice(pos.totalNotional)}
                 </td>
-                <td className={`px-2 py-2 text-right font-mono ${
-                  pos.realizedPnl > 0 ? 'text-neon-green' : pos.realizedPnl < 0 ? 'text-neon-red' : 'text-gray-400'
+                <td className={`px-4 py-3 text-right font-mono font-medium ${
+                  pos.realizedPnl > 0 ? 'text-emerald-400' : pos.realizedPnl < 0 ? 'text-red-400' : 'text-gray-500'
                 }`}>
                   {pos.realizedPnl !== 0 ? (pos.realizedPnl > 0 ? '+' : '') : ''}
                   {formatPrice(pos.realizedPnl)}

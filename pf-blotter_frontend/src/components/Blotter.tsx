@@ -100,17 +100,17 @@ export function Blotter({ orders }: BlotterProps) {
         return formatTime(order.transactTime);
       case 'rejectReason':
         return order.rejectReason ? (
-          <span className="text-neon-red text-xs">{order.rejectReason}</span>
+          <span className="text-red-400 text-xs">{order.rejectReason}</span>
         ) : (
-          '-'
+          <span className="text-gray-600">-</span>
         );
       case 'actions':
         return canCancel(order.status) ? (
           <div className="flex gap-1">
             <button
               onClick={() => setAmendingOrder(order)}
-              className="px-2 py-1 text-xs bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan 
-                       rounded hover:bg-neon-cyan/30 transition-colors"
+              className="px-2.5 py-1 text-xs bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 
+                       rounded-lg hover:bg-cyan-500/20 transition-all duration-200 font-medium"
               title="Amend order"
             >
               Amend
@@ -118,8 +118,8 @@ export function Blotter({ orders }: BlotterProps) {
             <button
               onClick={() => handleCancel(order.clOrdId)}
               disabled={cancelingId === order.clOrdId}
-              className="px-2 py-1 text-xs bg-neon-red/20 border border-neon-red/50 text-neon-red 
-                       rounded hover:bg-neon-red/30 transition-colors disabled:opacity-50"
+              className="px-2.5 py-1 text-xs bg-red-500/10 border border-red-500/30 text-red-400 
+                       rounded-lg hover:bg-red-500/20 transition-all duration-200 font-medium disabled:opacity-50"
             >
               {cancelingId === order.clOrdId ? '...' : 'Cancel'}
             </button>
@@ -133,20 +133,22 @@ export function Blotter({ orders }: BlotterProps) {
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-        <svg
-          className="w-16 h-16 mb-4 text-dark-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        <p className="text-lg">No orders yet</p>
+        <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <svg
+            className="w-8 h-8 text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <p className="text-lg font-medium text-gray-400">No orders yet</p>
         <p className="text-sm text-gray-600 mt-1">
           Use the form above or CLI sender to create orders
         </p>
@@ -159,11 +161,11 @@ export function Blotter({ orders }: BlotterProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-dark-500">
+            <tr className="border-b border-white/5 bg-white/[0.02]">
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider ${
+                  className={`px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider ${
                     col.width
                   } ${'align' in col ? col.align : ''}`}
                 >
@@ -172,20 +174,20 @@ export function Blotter({ orders }: BlotterProps) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-dark-600">
+          <tbody className="divide-y divide-white/5">
             {displayOrders.map((order, index) => (
               <tr
                 key={order.clOrdId}
-                className={`hover:bg-dark-600/50 transition-colors ${
+                className={`hover:bg-white/[0.02] transition-colors ${
                   index === 0 ? 'animate-fade-in' : ''
                 }`}
               >
                 {COLUMNS.map((col) => (
                   <td
                     key={col.key}
-                    className={`px-3 py-2.5 whitespace-nowrap ${col.width} ${
+                    className={`px-4 py-3 whitespace-nowrap ${col.width} ${
                       'align' in col ? col.align : ''
-                    }`}
+                    } ${col.key === 'quantity' || col.key === 'price' || col.key === 'leavesQty' || col.key === 'cumQty' || col.key === 'avgPx' ? 'font-mono' : ''}`}
                   >
                     {renderCell(order, col)}
                   </td>

@@ -172,28 +172,35 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col">
       {/* Header */}
-      <header className="bg-dark-800 border-b border-dark-600 flex-shrink-0">
+      <header className="bg-black/40 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-neon-cyan neon-text">
-                QuantBlotterSim
-              </h1>
-              <span className="text-[10px] text-gray-500 bg-dark-700 px-1.5 py-0.5 rounded hidden sm:inline">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                  QuantBlotterSim
+                </h1>
+              </div>
+              <span className="text-[10px] text-cyan-400/60 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full hidden sm:inline font-medium">
                 FIX 4.4
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Theme toggle */}
               <button
                 onClick={() => {
                   toggleTheme();
                   addToast(`Switched to ${theme === 'dark' ? 'light' : 'dark'} theme`, 'info');
                 }}
-                className="p-1.5 text-gray-400 hover:text-neon-cyan transition-colors"
+                className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-all duration-200"
                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme (T)`}
               >
                 {theme === 'dark' ? (
@@ -210,7 +217,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
               {/* Sound toggle */}
               <button
                 onClick={toggleSound}
-                className={`p-1.5 transition-colors ${soundOn ? 'text-neon-green' : 'text-gray-500'}`}
+                className={`p-2 rounded-lg transition-all duration-200 ${soundOn ? 'text-emerald-400 bg-emerald-500/10' : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'}`}
                 title={`${soundOn ? 'Disable' : 'Enable'} sound (S)`}
               >
                 {soundOn ? (
@@ -231,14 +238,14 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
                 onReconnect={reconnect}
               />
 
-              <div className="flex items-center gap-2 pl-3 border-l border-dark-600">
+              <div className="flex items-center gap-3 pl-3 ml-1 border-l border-white/10">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm text-white leading-tight">{user.name}</p>
+                  <p className="text-sm text-white font-medium leading-tight">{user.name}</p>
                   <p className="text-[10px] text-gray-500">{user.email}</p>
                 </div>
                 <button
                   onClick={onLogout}
-                  className="p-1.5 text-gray-400 hover:text-neon-red transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
                   title="Sign out"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -256,15 +263,15 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
       {/* Stats bar (only show on Trading tab) */}
       {activeTab === 'trading' && (
-        <div className="bg-dark-800/50 border-b border-dark-600 overflow-x-auto flex-shrink-0">
-          <div className="max-w-7xl mx-auto px-4 py-2">
+        <div className="bg-black/20 backdrop-blur-sm border-b border-white/5 overflow-x-auto flex-shrink-0">
+          <div className="max-w-7xl mx-auto px-4 py-2.5">
             <div className="flex items-center gap-4 md:gap-6 min-w-max text-sm">
               <StatBadge label="Total" value={stats.total} color="text-white" />
-              <StatBadge label="New" value={stats.new} color="text-neon-cyan" />
-              <StatBadge label="Partial" value={stats.partial} color="text-neon-yellow" />
-              <StatBadge label="Filled" value={stats.filled} color="text-neon-green" />
-              <StatBadge label="Rejected" value={stats.rejected} color="text-neon-red" />
-              <StatBadge label="Canceled" value={stats.canceled} color="text-gray-400" />
+              <StatBadge label="New" value={stats.new} color="text-cyan-400" />
+              <StatBadge label="Partial" value={stats.partial} color="text-amber-400" />
+              <StatBadge label="Filled" value={stats.filled} color="text-emerald-400" />
+              <StatBadge label="Rejected" value={stats.rejected} color="text-red-400" />
+              <StatBadge label="Canceled" value={stats.canceled} color="text-gray-500" />
             </div>
           </div>
         </div>
@@ -283,22 +290,22 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       </main>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-dark-800/90 backdrop-blur border-t border-dark-600 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-xs text-gray-500">
+      <footer className="fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xl border-t border-white/5 flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-4">
             <span className="hidden sm:inline">QuantBlotterSim • FIX 4.4 Order Gateway</span>
             <span className="sm:hidden">QuantBlotterSim</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden md:inline">Shortcuts:</span>
-            <kbd className="px-1 bg-dark-700 rounded text-[10px]">N</kbd>
-            <span className="hidden md:inline text-[10px]">Order</span>
-            <kbd className="px-1 bg-dark-700 rounded text-[10px]">1-4</kbd>
-            <span className="hidden md:inline text-[10px]">Tabs</span>
-            <kbd className="px-1 bg-dark-700 rounded text-[10px]">S</kbd>
-            <span className="hidden md:inline text-[10px]">Sound</span>
-            <kbd className="px-1 bg-dark-700 rounded text-[10px]">T</kbd>
-            <span className="hidden md:inline text-[10px]">Theme</span>
+            <span className="hidden md:inline text-gray-600">Shortcuts:</span>
+            <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400">N</kbd>
+            <span className="hidden md:inline text-[10px] text-gray-600">Order</span>
+            <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400">1-4</kbd>
+            <span className="hidden md:inline text-[10px] text-gray-600">Tabs</span>
+            <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400">S</kbd>
+            <span className="hidden md:inline text-[10px] text-gray-600">Sound</span>
+            <kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] text-gray-400">T</kbd>
+            <span className="hidden md:inline text-[10px] text-gray-600">Theme</span>
           </div>
         </div>
       </footer>
@@ -308,9 +315,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
 function StatBadge({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-xs text-gray-500 uppercase">{label}</span>
-      <span className={`font-semibold ${color}`}>{value}</span>
+    <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
+      <span className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</span>
+      <span className={`font-bold ${color}`}>{value}</span>
     </div>
   );
 }

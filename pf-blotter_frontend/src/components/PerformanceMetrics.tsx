@@ -49,53 +49,55 @@ export function PerformanceMetrics() {
   };
 
   return (
-    <div className="bg-dark-800 rounded-lg p-4 neon-border">
-      <h3 className="text-lg font-medium text-white flex items-center gap-2 mb-4">
-        <svg className="w-5 h-5 text-neon-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
+    <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+      <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
         Performance
       </h3>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Latency Stats */}
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 uppercase">Latency</p>
-          <div className="space-y-1">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Latency</p>
+          <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Avg</span>
-              <span className="font-mono text-neon-green">{formatLatency(stats.avgLatencyUs)}</span>
+              <span className="text-gray-500">Avg</span>
+              <span className="font-mono text-emerald-400 font-medium">{formatLatency(stats.avgLatencyUs)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Min</span>
-              <span className="font-mono text-neon-cyan">{formatLatency(stats.minLatencyUs)}</span>
+              <span className="text-gray-500">Min</span>
+              <span className="font-mono text-cyan-400 font-medium">{formatLatency(stats.minLatencyUs)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Max</span>
-              <span className="font-mono text-neon-yellow">{formatLatency(stats.maxLatencyUs)}</span>
+              <span className="text-gray-500">Max</span>
+              <span className="font-mono text-amber-400 font-medium">{formatLatency(stats.maxLatencyUs)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">P99</span>
-              <span className="font-mono text-neon-red">{formatLatency(stats.p99LatencyUs)}</span>
+              <span className="text-gray-500">P99</span>
+              <span className="font-mono text-red-400 font-medium">{formatLatency(stats.p99LatencyUs)}</span>
             </div>
           </div>
         </div>
 
         {/* Notional Stats */}
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 uppercase">Notional</p>
-          <div className="space-y-1">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Notional</p>
+          <div className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Total</span>
-              <span className="font-mono text-white">{formatPrice(stats.totalNotional)}</span>
+              <span className="text-gray-500">Total</span>
+              <span className="font-mono text-white font-medium">{formatPrice(stats.totalNotional)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Filled</span>
-              <span className="font-mono text-neon-green">{formatPrice(stats.filledNotional)}</span>
+              <span className="text-gray-500">Filled</span>
+              <span className="font-mono text-emerald-400 font-medium">{formatPrice(stats.filledNotional)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Fill Rate</span>
-              <span className="font-mono text-neon-cyan">
+              <span className="text-gray-500">Fill Rate</span>
+              <span className="font-mono text-cyan-400 font-medium">
                 {stats.totalOrders > 0 
                   ? `${((stats.filledOrders / stats.totalOrders) * 100).toFixed(1)}%`
                   : '-'}

@@ -59,9 +59,9 @@ interface TabNavigationProps {
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="bg-dark-800 border-b border-dark-600">
+    <div className="bg-black/20 backdrop-blur-sm border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4">
-        <nav className="flex gap-1 overflow-x-auto scrollbar-hide" role="tablist">
+        <nav className="flex gap-1 overflow-x-auto scrollbar-hide py-1" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -69,17 +69,21 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
               aria-selected={activeTab === tab.id}
               onClick={() => onTabChange(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-3 text-sm font-medium 
-                border-b-2 transition-all whitespace-nowrap
+                flex items-center gap-2 px-4 py-2.5 text-sm font-medium 
+                rounded-lg transition-all duration-200 whitespace-nowrap my-1
                 ${activeTab === tab.id
-                  ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/5'
-                  : 'border-transparent text-gray-400 hover:text-white hover:bg-dark-700/50'
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }
               `}
             >
               {tab.icon}
               <span>{tab.label}</span>
-              <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] bg-dark-700 rounded text-gray-500">
+              <kbd className={`hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] rounded font-mono
+                ${activeTab === tab.id 
+                  ? 'bg-cyan-500/20 text-cyan-400/80' 
+                  : 'bg-white/5 text-gray-500 border border-white/10'
+                }`}>
                 {tab.shortcut}
               </kbd>
             </button>
