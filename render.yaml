@@ -2,7 +2,7 @@
 services:
   # C++ Backend (Web Service)
   - type: web
-    name: pf-blotter-backend
+    name: quantblottersim-api
     runtime: docker
     dockerfilePath: ./pf-blotter_backend/Dockerfile
     dockerContext: ./pf-blotter_backend
@@ -14,7 +14,7 @@ services:
 
   # React Frontend (Static Site)
   - type: web
-    name: pf-blotter-frontend
+    name: quantblottersim
     runtime: static
     rootDir: pf-blotter_frontend
     buildCommand: npm ci && npm run build
@@ -31,5 +31,5 @@ services:
       - key: VITE_API_URL
         fromService:
           type: web
-          name: pf-blotter-backend
+          name: quantblottersim-api
           property: host
