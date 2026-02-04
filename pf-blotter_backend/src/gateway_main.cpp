@@ -204,15 +204,21 @@ int main(int argc, char** argv) {
                 errorMsg = "Quantity must be positive";
                 return false;
             }
-            if (req.price <= 0.0) {
-                errorMsg = "Price must be positive";
+            // Price check - only for limit orders (orderType '2')
+            if (req.orderType != '1' && req.price <= 0.0) {
+                errorMsg = "Price must be positive for Limit orders";
                 return false;
             }
             if (req.quantity > MAX_ORDER_QTY) {
                 errorMsg = "Order quantity exceeds limit (" + std::to_string(MAX_ORDER_QTY) + ")";
                 return false;
             }
-            double notional = req.quantity * req.price;
+            
+            // For market orders, get current market price for notional check
+            bool isMarketOrder = (req.orderType == '1');
+            double orderPrice = isMarketOrder ? market.mark(req.symbol) : req.price;
+            
+            double notional = req.quantity * orderPrice;
             if (notional > MAX_NOTIONAL) {
                 errorMsg = "Notional exceeds limit ($" + std::to_string(static_cast<int>(MAX_NOTIONAL)) + ")";
                 return false;
@@ -233,7 +239,7 @@ int main(int argc, char** argv) {
             record.orderId = orderId;
             record.symbol = req.symbol;
             record.side = req.side;
-            record.price = req.price;
+            record.price = orderPrice;  // Use market price for market orders
             record.quantity = req.quantity;
             record.leavesQty = req.quantity;
             record.cumQty = 0;
@@ -251,12 +257,23 @@ int main(int argc, char** argv) {
             store.upsert(record);
             
             // Audit log entry
+            std::string orderTypeStr = isMarketOrder ? "MARKET" : "LIMIT";
             audit.log(qfblotter::AuditLog::EventType::ORDER_NEW, req.clOrdId,
-                "symbol=" + req.symbol + ",side=" + std::string(1, req.side) +
-                ",qty=" + std::to_string(req.quantity) + ",px=" + std::to_string(req.price));
+                "type=" + orderTypeStr + ",symbol=" + req.symbol + ",side=" + std::string(1, req.side) +
+                ",qty=" + std::to_string(req.quantity) + ",px=" + std::to_string(orderPrice));
 
-            // Don't fill immediately - let the FillSimulator handle partial fills
-            // Publish update (order is in NEW state)
+            // For market orders, fill immediately at market price
+            if (isMarketOrder) {
+                double fillPrice = market.nextTick(req.symbol);
+                store.updateStatus(req.clOrdId, "FILLED", 0, req.quantity, fillPrice);
+                record.fillTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count();
+                
+                audit.log(qfblotter::AuditLog::EventType::ORDER_FILLED, req.clOrdId,
+                    "fillPx=" + std::to_string(fillPrice) + ",fillQty=" + std::to_string(req.quantity));
+            }
+            
+            // Publish update
             http.publishEvent(store.snapshotString());
             return true;
         });

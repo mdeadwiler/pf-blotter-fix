@@ -1,6 +1,7 @@
 import { useAuth } from './hooks/useAuth';
 import { AuthPage } from './components/AuthPage';
 import { Dashboard } from './components/Dashboard';
+import { ToastProvider } from './components/Toast';
 
 function App() {
   const { user, isAuthenticated, login, signup, logout, error, isLoading } = useAuth();
@@ -20,17 +21,23 @@ function App() {
   // Show auth page if not logged in
   if (!isAuthenticated || !user) {
     return (
-      <AuthPage
-        onLogin={login}
-        onSignup={signup}
-        error={error}
-        isLoading={isLoading}
-      />
+      <ToastProvider>
+        <AuthPage
+          onLogin={login}
+          onSignup={signup}
+          error={error}
+          isLoading={isLoading}
+        />
+      </ToastProvider>
     );
   }
 
   // Show dashboard when authenticated
-  return <Dashboard user={user} onLogout={logout} />;
+  return (
+    <ToastProvider>
+      <Dashboard user={user} onLogout={logout} />
+    </ToastProvider>
+  );
 }
 
 export default App;

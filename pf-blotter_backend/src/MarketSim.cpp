@@ -2,8 +2,32 @@
 
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
 
 namespace qfblotter {
+
+namespace {
+// Realistic starting prices for common tickers (approximate as of 2024)
+const std::unordered_map<std::string, double> TICKER_PRICES = {
+    {"AAPL", 185.00},   {"GOOGL", 175.00},  {"MSFT", 420.00},
+    {"AMZN", 185.00},   {"NVDA", 875.00},   {"META", 500.00},
+    {"TSLA", 175.00},   {"AMD", 155.00},    {"INTC", 42.00},
+    {"NFLX", 625.00},   {"DIS", 115.00},    {"PYPL", 62.00},
+    {"V", 280.00},      {"MA", 460.00},     {"JPM", 195.00},
+    {"BAC", 35.00},     {"WFC", 55.00},     {"GS", 475.00},
+    {"C", 60.00},       {"MS", 95.00},      {"IBM", 185.00},
+    {"ORCL", 125.00},   {"CRM", 275.00},    {"ADBE", 575.00},
+    {"UBER", 78.00},    {"LYFT", 15.00},    {"ABNB", 145.00},
+    {"COIN", 225.00},   {"SQ", 75.00},      {"SHOP", 78.00},
+    {"SNAP", 11.00},    {"TWTR", 45.00},    {"PINS", 32.00},
+    {"SPY", 520.00},    {"QQQ", 440.00},    {"IWM", 210.00},
+};
+
+double getRealisticPrice(const std::string& symbol, double defaultPrice) {
+    auto it = TICKER_PRICES.find(symbol);
+    return (it != TICKER_PRICES.end()) ? it->second : defaultPrice;
+}
+}  // namespace
 
 MarketSim::MarketSim(unsigned int seed, double startPrice, double step)
     : rng_(seed), dist_(0.0, 1.0), startPrice_(startPrice), step_(step) {}
@@ -12,8 +36,10 @@ double MarketSim::mark(const std::string& symbol) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = state_.find(symbol);
     if (it == state_.end()) {
-        state_[symbol] = State{startPrice_};
-        return startPrice_;
+        // Use realistic price if available, otherwise default
+        double price = getRealisticPrice(symbol, startPrice_);
+        state_[symbol] = State{price};
+        return price;
     }
     return it->second.last;
 }
@@ -27,9 +53,11 @@ double MarketSim::nextTick(const std::string& symbol) {
 double MarketSim::nextTickUnsafe(const std::string& symbol) {
     auto& st = state_[symbol];
     if (st.last == 0.0) {
-        st.last = startPrice_;
+        st.last = getRealisticPrice(symbol, startPrice_);
     }
-    st.last += dist_(rng_) * step_;
+    // Price movement proportional to current price (more realistic)
+    double move = dist_(rng_) * step_ * (st.last / 100.0);
+    st.last += move;
     if (st.last < 0.01) {
         st.last = 0.01;
     }

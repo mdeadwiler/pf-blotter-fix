@@ -167,6 +167,9 @@ public:
                 order.side = (sideStr == "Buy" || sideStr == "1") ? '1' : '2';
                 order.quantity = json.at("quantity").get<int>();
                 order.price = json.at("price").get<double>();
+                // Order type: Market ('1') or Limit ('2', default)
+                std::string orderTypeStr = json.value("orderType", "Limit");
+                order.orderType = (orderTypeStr == "Market" || orderTypeStr == "1") ? '1' : '2';
 
                 std::string errorMsg;
                 bool success = orderHandler_(order, errorMsg);
@@ -224,6 +227,75 @@ public:
                 nlohmann::json errJson;
                 errJson["error"] = std::string("Invalid request: ") + e.what();
                 res.set_content(errJson.dump(), "application/json");
+            }
+        });
+
+        // POST /amend - Amend order (rate limited)
+        server_.Post("/amend", [this](const httplib::Request& req, httplib::Response& res) {
+            if (!orderRateLimiter_.allow(req.remote_addr)) {
+                res.status = 429;
+                res.set_content(R"({"error":"Rate limit exceeded."})", "application/json");
+                return;
+            }
+
+            if (!amendHandler_) {
+                res.status = 501;
+                res.set_content(R"({"error":"Amend handler not configured"})", "application/json");
+                return;
+            }
+
+            try {
+                auto json = nlohmann::json::parse(req.body);
+                AmendRequest amend;
+                amend.origClOrdId = json.at("origClOrdId").get<std::string>();
+                amend.clOrdId = json.value("clOrdId", amend.origClOrdId + "_AMD");
+                amend.newQuantity = json.value("quantity", 0);
+                amend.newPrice = json.value("price", 0.0);
+
+                std::string errorMsg;
+                bool success = amendHandler_(amend, errorMsg);
+
+                if (success) {
+                    res.set_content(R"({"status":"ok"})", "application/json");
+                } else {
+                    res.status = 400;
+                    nlohmann::json errJson;
+                    errJson["error"] = errorMsg;
+                    res.set_content(errJson.dump(), "application/json");
+                }
+            } catch (const std::exception& e) {
+                res.status = 400;
+                nlohmann::json errJson;
+                errJson["error"] = std::string("Invalid request: ") + e.what();
+                res.set_content(errJson.dump(), "application/json");
+            }
+        });
+
+        // GET /market-hours - Check if market is open
+        server_.Get("/market-hours", [this](const httplib::Request&, httplib::Response& res) {
+            if (marketHoursProvider_) {
+                res.set_content(marketHoursProvider_(), "application/json");
+            } else {
+                // Default implementation
+                auto now = std::chrono::system_clock::now();
+                auto time = std::chrono::system_clock::to_time_t(now);
+                std::tm tm = *std::gmtime(&time);
+                
+                // Convert to ET (UTC-5 or UTC-4 for DST, simplified to UTC-5)
+                int etHour = (tm.tm_hour + 19) % 24;  // UTC-5
+                
+                bool isWeekday = tm.tm_wday >= 1 && tm.tm_wday <= 5;
+                bool isMarketHours = etHour >= 9 && etHour < 16;  // 9:30 AM - 4:00 PM ET (simplified)
+                bool isOpen = isWeekday && isMarketHours;
+                
+                nlohmann::json j;
+                j["isOpen"] = isOpen;
+                j["currentTimeET"] = std::to_string(etHour) + ":" + (tm.tm_min < 10 ? "0" : "") + std::to_string(tm.tm_min);
+                j["marketOpen"] = "09:30";
+                j["marketClose"] = "16:00";
+                j["message"] = isOpen ? "Market is open" : "Market is closed";
+                
+                res.set_content(j.dump(), "application/json");
             }
         });
 
@@ -366,14 +438,24 @@ public:
         marketBroker_.publish(marketDataJson);
     }
 
+    void setAmendHandler(AmendHandler handler) {
+        amendHandler_ = std::move(handler);
+    }
+
+    void setMarketHoursProvider(MarketHoursProvider provider) {
+        marketHoursProvider_ = std::move(provider);
+    }
+
 private:
     int port_;
     SnapshotProvider snapshotProvider_;
     OrderHandler orderHandler_;
     CancelHandler cancelHandler_;
+    AmendHandler amendHandler_;
     OrderBookProvider orderBookProvider_;
     StatsProvider statsProvider_;
     MarketDataProvider marketDataProvider_;
+    MarketHoursProvider marketHoursProvider_;
     httplib::Server server_;
     std::atomic<bool> running_{false};
     std::thread thread_;
@@ -398,6 +480,10 @@ void HttpServer::setCancelHandler(CancelHandler handler) {
     impl_->setCancelHandler(std::move(handler));
 }
 
+void HttpServer::setAmendHandler(AmendHandler handler) {
+    impl_->setAmendHandler(std::move(handler));
+}
+
 void HttpServer::setOrderBookProvider(OrderBookProvider provider) {
     impl_->setOrderBookProvider(std::move(provider));
 }
@@ -408,6 +494,10 @@ void HttpServer::setStatsProvider(StatsProvider provider) {
 
 void HttpServer::setMarketDataProvider(MarketDataProvider provider) {
     impl_->setMarketDataProvider(std::move(provider));
+}
+
+void HttpServer::setMarketHoursProvider(MarketHoursProvider provider) {
+    impl_->setMarketHoursProvider(std::move(provider));
 }
 
 void HttpServer::start() {

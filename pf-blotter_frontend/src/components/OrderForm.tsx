@@ -1,14 +1,16 @@
-import { useState, FormEvent, useRef, useEffect } from 'react';
+import { useState, FormEvent, useRef, useEffect, Ref } from 'react';
 import { API_CONFIG } from '../utils/config';
 
 interface OrderFormProps {
   onOrderSubmitted: () => void;
+  inputRef?: Ref<HTMLInputElement>;
 }
 
-export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
+export function OrderForm({ onOrderSubmitted, inputRef }: OrderFormProps) {
   const [clOrdId, setClOrdId] = useState('');
   const [symbol, setSymbol] = useState('');
   const [side, setSide] = useState<'Buy' | 'Sell'>('Buy');
+  const [orderType, setOrderType] = useState<'Limit' | 'Market'>('Limit');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,8 +39,14 @@ export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
       successTimeoutRef.current = null;
     }
 
-    if (!clOrdId || !symbol || !quantity || !price) {
-      setError('All fields are required');
+    if (!clOrdId || !symbol || !quantity) {
+      setError('ClOrdID, Symbol, and Quantity are required');
+      return;
+    }
+    
+    // Price required for Limit orders
+    if (orderType === 'Limit' && !price) {
+      setError('Price is required for Limit orders');
       return;
     }
 
@@ -52,8 +60,9 @@ export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
           clOrdId,
           symbol: symbol.toUpperCase(),
           side,
+          orderType,
           quantity: parseInt(quantity, 10),
-          price: parseFloat(price),
+          price: orderType === 'Market' ? 0 : parseFloat(price),
         }),
       });
 
@@ -88,10 +97,11 @@ export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
         New Order
       </h3>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
         <div>
           <label htmlFor="clOrdId" className="block text-xs text-gray-400 mb-1">ClOrdID</label>
           <input
+            ref={inputRef}
             id="clOrdId"
             type="text"
             value={clOrdId}
@@ -115,6 +125,21 @@ export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
                      placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-colors uppercase"
             disabled={isSubmitting}
           />
+        </div>
+
+        <div>
+          <label htmlFor="orderType" className="block text-xs text-gray-400 mb-1">Type</label>
+          <select
+            id="orderType"
+            value={orderType}
+            onChange={(e) => setOrderType(e.target.value as 'Limit' | 'Market')}
+            className="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded text-sm text-white 
+                     focus:outline-none focus:border-neon-cyan transition-colors"
+            disabled={isSubmitting}
+          >
+            <option value="Limit">Limit</option>
+            <option value="Market">Market</option>
+          </select>
         </div>
 
         <div>
@@ -148,18 +173,21 @@ export function OrderForm({ onOrderSubmitted }: OrderFormProps) {
         </div>
 
         <div>
-          <label htmlFor="price" className="block text-xs text-gray-400 mb-1">Price</label>
+          <label htmlFor="price" className="block text-xs text-gray-400 mb-1">
+            Price {orderType === 'Market' && <span className="text-gray-600">(MKT)</span>}
+          </label>
           <input
             id="price"
             type="number"
-            value={price}
+            value={orderType === 'Market' ? '' : price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="150.00"
+            placeholder={orderType === 'Market' ? 'Market' : '150.00'}
             min="0.01"
             step="0.01"
-            className="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded text-sm text-white 
-                     placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-colors"
-            disabled={isSubmitting}
+            className={`w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded text-sm text-white 
+                     placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-colors
+                     ${orderType === 'Market' ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isSubmitting || orderType === 'Market'}
           />
         </div>
 

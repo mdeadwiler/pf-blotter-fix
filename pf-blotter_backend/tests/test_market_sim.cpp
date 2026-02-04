@@ -9,10 +9,14 @@ protected:
     MarketSim sim{42, 100.0, 0.05};
 };
 
-// Test: Initial mark price
+// Test: Initial mark price (use unknown ticker to get default price)
 TEST_F(MarketSimTest, InitialMarkPrice) {
-    double price = sim.mark("AAPL");
-    EXPECT_DOUBLE_EQ(price, 100.0);  // Start price
+    double price = sim.mark("UNKNOWN_TICKER");
+    EXPECT_DOUBLE_EQ(price, 100.0);  // Default start price for unknown tickers
+    
+    // Known tickers get realistic prices
+    double aaplPrice = sim.mark("AAPL");
+    EXPECT_GT(aaplPrice, 100.0);  // AAPL should have a realistic price
 }
 
 // Test: Price ticks are within reasonable bounds
@@ -26,22 +30,23 @@ TEST_F(MarketSimTest, PriceTickBounds) {
 
 // Test: Different symbols have independent prices
 TEST_F(MarketSimTest, IndependentSymbols) {
-    double applePrice = sim.mark("AAPL");
-    double googlePrice = sim.mark("GOOGL");
+    // Use unknown tickers to test independence with default prices
+    double sym1Price = sim.mark("SYM1_TEST");
+    double sym2Price = sim.mark("SYM2_TEST");
     
     // Both start at the same default price
-    EXPECT_DOUBLE_EQ(applePrice, 100.0);
-    EXPECT_DOUBLE_EQ(googlePrice, 100.0);
+    EXPECT_DOUBLE_EQ(sym1Price, 100.0);
+    EXPECT_DOUBLE_EQ(sym2Price, 100.0);
     
-    // Advance AAPL, GOOGL should remain at starting price
-    sim.nextTick("AAPL");
-    sim.nextTick("AAPL");
-    sim.nextTick("AAPL");
+    // Advance SYM1, SYM2 should remain at starting price
+    sim.nextTick("SYM1_TEST");
+    sim.nextTick("SYM1_TEST");
+    sim.nextTick("SYM1_TEST");
     
-    // GOOGL hasn't been ticked yet, so it's still at start
-    EXPECT_DOUBLE_EQ(sim.mark("GOOGL"), 100.0);
-    // AAPL has moved
-    EXPECT_NE(sim.mark("AAPL"), 100.0);
+    // SYM2 hasn't been ticked yet, so it's still at start
+    EXPECT_DOUBLE_EQ(sim.mark("SYM2_TEST"), 100.0);
+    // SYM1 has moved
+    EXPECT_NE(sim.mark("SYM1_TEST"), 100.0);
 }
 
 // Test: Buy order should fill when market price <= limit
