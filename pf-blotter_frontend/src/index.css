@@ -133,11 +133,11 @@ body {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Light theme overrides */
+/* Light theme overrides - comprehensive accessibility fixes */
 .light-theme {
   color-scheme: light;
   color: #1a1a2e;
-  background-color: #f5f5f7;
+  background-color: #f8f9fa;
 }
 
 .light-theme ::-webkit-scrollbar-track {
@@ -145,60 +145,216 @@ body {
 }
 
 .light-theme ::-webkit-scrollbar-thumb {
-  background: #c0c0c0;
+  background: #a0a0a0;
 }
 
-.light-theme .bg-dark-900 {
-  background-color: #f5f5f7;
+/* Background colors */
+.light-theme .bg-dark-900,
+.light-theme .bg-dark-900\/80 {
+  background-color: #f8f9fa !important;
 }
 
-.light-theme .bg-dark-800 {
-  background-color: #ffffff;
+.light-theme .bg-dark-800,
+.light-theme .bg-dark-800\/50,
+.light-theme .bg-dark-800\/80 {
+  background-color: #ffffff !important;
 }
 
 .light-theme .bg-dark-700 {
-  background-color: #f0f0f2;
+  background-color: #f0f1f3 !important;
 }
 
 .light-theme .bg-dark-600 {
-  background-color: #e5e5e7;
+  background-color: #e8e9eb !important;
 }
 
+/* Text colors - high contrast for accessibility */
 .light-theme .text-white {
-  color: #1a1a2e;
+  color: #1a1a2e !important;
 }
 
 .light-theme .text-gray-400 {
-  color: #6b6b7b;
+  color: #4a4a5a !important;
 }
 
 .light-theme .text-gray-500 {
-  color: #8b8b9b;
+  color: #5a5a6a !important;
 }
 
 .light-theme .text-gray-600 {
-  color: #9b9bab;
+  color: #6a6a7a !important;
 }
 
+.light-theme .placeholder-gray-500::placeholder {
+  color: #8a8a9a !important;
+}
+
+/* Neon colors - darker for light theme readability */
+.light-theme .text-neon-cyan {
+  color: #0088aa !important;
+  text-shadow: none;
+}
+
+.light-theme .text-neon-green {
+  color: #00873c !important;
+  text-shadow: none;
+}
+
+.light-theme .text-neon-red {
+  color: #cc2222 !important;
+  text-shadow: none;
+}
+
+.light-theme .text-neon-yellow {
+  color: #aa7700 !important;
+  text-shadow: none;
+}
+
+.light-theme .neon-text {
+  text-shadow: none;
+}
+
+/* Status colors - darker for light theme */
+.light-theme .status-new {
+  color: #0088aa !important;
+  text-shadow: none;
+}
+
+.light-theme .status-filled {
+  color: #00873c !important;
+  text-shadow: none;
+}
+
+.light-theme .status-rejected {
+  color: #cc2222 !important;
+  text-shadow: none;
+}
+
+.light-theme .status-canceled {
+  color: #666666 !important;
+}
+
+.light-theme .status-partial {
+  color: #aa7700 !important;
+  text-shadow: none;
+}
+
+/* Side colors - darker for light theme */
+.light-theme .side-buy {
+  color: #00873c !important;
+}
+
+.light-theme .side-sell {
+  color: #cc2222 !important;
+}
+
+/* Border colors */
 .light-theme .border-dark-500 {
-  border-color: #d0d0d5;
+  border-color: #d0d0d8 !important;
 }
 
 .light-theme .border-dark-600 {
-  border-color: #e0e0e5;
+  border-color: #e0e0e8 !important;
 }
 
 .light-theme .neon-border {
-  border-color: #00a5af40;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #0088aa40 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .light-theme .divide-dark-600 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e5e5e7;
+  border-color: #e0e0e8;
 }
 
 .light-theme .divide-dark-700 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #f0f0f2;
+  border-color: #f0f0f3;
+}
+
+/* Input fields */
+.light-theme input,
+.light-theme select {
+  background-color: #ffffff !important;
+  border-color: #c0c0c8 !important;
+  color: #1a1a2e !important;
+}
+
+.light-theme input:focus,
+.light-theme select:focus {
+  border-color: #0088aa !important;
+}
+
+.light-theme input:disabled,
+.light-theme select:disabled {
+  background-color: #f0f0f3 !important;
+  color: #8a8a9a !important;
+}
+
+/* Buttons */
+.light-theme button {
+  color: #1a1a2e;
+}
+
+.light-theme .bg-neon-cyan {
+  background-color: #0088aa !important;
+  color: #ffffff !important;
+}
+
+.light-theme .bg-neon-green\/20 {
+  background-color: rgba(0, 135, 60, 0.15) !important;
+}
+
+.light-theme .bg-neon-red\/20 {
+  background-color: rgba(204, 34, 34, 0.15) !important;
+}
+
+.light-theme .bg-neon-cyan\/20 {
+  background-color: rgba(0, 136, 170, 0.15) !important;
+}
+
+.light-theme .bg-neon-yellow\/20 {
+  background-color: rgba(170, 119, 0, 0.15) !important;
+}
+
+/* Toast borders for light theme */
+.light-theme .border-neon-green {
+  border-color: #00873c !important;
+}
+
+.light-theme .border-neon-red {
+  border-color: #cc2222 !important;
+}
+
+.light-theme .border-neon-cyan {
+  border-color: #0088aa !important;
+}
+
+.light-theme .border-neon-yellow {
+  border-color: #aa7700 !important;
+}
+
+/* Table styling */
+.light-theme table {
+  color: #1a1a2e;
+}
+
+.light-theme th {
+  color: #4a4a5a !important;
+}
+
+.light-theme td {
+  color: #1a1a2e !important;
+}
+
+/* Backdrop blur fix */
+.light-theme .backdrop-blur,
+.light-theme .backdrop-blur-sm {
+  background-color: rgba(248, 249, 250, 0.9) !important;
+}
+
+/* Keyboard shortcuts kbd styling */
+.light-theme kbd {
+  background-color: #e8e9eb !important;
+  color: #4a4a5a !important;
 }
 
 /* Mobile responsive improvements */
