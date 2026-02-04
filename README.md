@@ -1,89 +1,96 @@
 # QuantBlotterSim
 
-A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infrastructure skills.
+A production-grade FIX 4.4 order management system simulator demonstrating quantitative development and trading infrastructure skills.
 
-## Live Demo
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-quantblottersim.onrender.com-00d4ff?style=for-the-badge)](https://quantblottersim.onrender.com)
+[![GitHub](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/mdeadwiler/pf-blotter-fix)
 
-**Try it now:** [https://quantblottersim.onrender.com](https://quantblottersim.onrender.com)
+---
 
-> Submit orders, watch real-time fills, track P&L—all powered by the same FIX protocol Wall Street uses. No signup required to explore.
+## Overview
+
+This project implements a complete trading system simulator from the ground up:
+
+- **Backend**: C++20 FIX protocol engine with real-time WebSocket/SSE streaming
+- **Frontend**: React dashboard with algorithmic trading, backtesting, and quantitative analytics
+- **Infrastructure**: Docker deployment, CI/CD, rate limiting, persistence
+
+> **Note**: This is an educational simulator. All prices are synthetic (random walk), no real money is involved, and it is not connected to real markets.
+
+For a detailed technical breakdown of the implementation, see [TECHNICAL.md](./TECHNICAL.md).
+
+---
+
+## Quick Links
+
+| Resource | Link |
+|----------|------|
+| **Live Demo** | [quantblottersim.onrender.com](https://quantblottersim.onrender.com) |
+| **Technical Documentation** | [TECHNICAL.md](./TECHNICAL.md) |
+| **API Reference** | [API Endpoints](#api-endpoints) |
+| **Source Code** | [GitHub Repository](https://github.com/mdeadwiler/pf-blotter-fix) |
 
 ---
 
 ## Features
 
 ### Trading Engine
-- **FIX 4.4 Protocol** - Full NewOrderSingle, OrderCancelRequest, OrderCancelReplaceRequest, ExecutionReport
-- **Market & Limit Orders** - Market orders fill instantly at current price
-- **Order Amendment** - Modify price/quantity of open orders (cancel/replace)
-- **Partial Fills** - Realistic execution simulation with chunked fills
-- **Pre-Trade Risk Controls** - Max quantity (10,000), max notional ($1M), duplicate detection
-- **Rate Limiting** - 60 orders/min, 30 cancels/min per IP (DOS protection)
-- **Persistence Layer** - Orders saved to JSON, recovered on restart
+- FIX 4.4 protocol (NewOrderSingle, ExecutionReport, OrderCancelRequest, OrderCancelReplaceRequest)
+- Market & Limit orders with partial fill simulation
+- Order amendment (cancel/replace)
+- Pre-trade risk controls (max quantity, max notional, duplicate detection)
+- Rate limiting (60 orders/min per IP)
+- File-based persistence with crash recovery
 
 ### Algorithmic Trading
-- **Execution Algorithms** - VWAP, TWAP with configurable slices
-- **Technical Strategies** - Mean Reversion, Momentum, Bollinger Bands, RSI, Breakout
-- **Statistical Arbitrage** - Pairs trading with z-score signals
-- **Risk Management** - Stop-loss, take-profit, position limits
-- **Real-Time Execution** - Automated order submission with live indicators
-
-### Real-Time Data
-- **WebSocket Support** - RFC 6455 implementation for sub-millisecond latency
-- **SSE Fallback** - Graceful degradation to Server-Sent Events
-- **Order Book Visualization** - Simulated bid/ask depth chart
-- **Market Data Feed** - Live price ticks streaming at 4Hz
-- **Realistic Prices** - 35+ tickers with approximate real-world starting prices
-
-### Professional Backtesting Engine
-- **Risk-Adjusted Metrics** - Sharpe, Sortino, Calmar, Information Ratio, Treynor
-- **Risk Metrics** - VaR 95%, CVaR (Expected Shortfall), Beta, Alpha
-- **Trade Statistics** - Win rate, profit factor, payoff ratio, avg win/loss
-- **Cost Modeling** - Commission per trade, slippage in basis points
-- **Equity & Drawdown Curves** - Visual P&L and risk progression
+- Execution algorithms: VWAP, TWAP
+- Technical strategies: Mean Reversion, Momentum, Bollinger Bands, RSI, Breakout
+- Statistical arbitrage: Pairs Trading with z-score signals
+- Configurable position limits, stop-loss, take-profit
 
 ### Quantitative Analytics
-- **Portfolio Optimizer** - Markowitz mean-variance optimization with efficient frontier
-- **Options Pricer** - Black-Scholes with full Greeks (Delta, Gamma, Theta, Vega, Rho)
-- **Implied Volatility** - Newton-Raphson IV solver from market prices
-- **Monte Carlo VaR** - 10,000-path simulation for Value at Risk & CVaR (Expected Shortfall)
-- **Kelly Criterion** - Optimal position sizing with growth rate visualization
-- **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)
-- **Position Tracking** - Real-time P&L calculation per symbol
+- **Portfolio Optimizer**: Markowitz mean-variance with efficient frontier visualization
+- **Options Pricer**: Black-Scholes model with full Greeks (Δ, Γ, Θ, ν, ρ) and IV solver
+- **Monte Carlo VaR**: 10,000-path GBM simulation for Value at Risk & Expected Shortfall
+- **Kelly Criterion**: Optimal position sizing with growth rate curves
 
-### UX Polish (Bloomberg-style)
-- **Tabbed Interface** - Trading / Algo Execution / Backtesting / Analytics
-- **Toast Notifications** - Visual feedback on order fills/rejects
-- **Sound Effects** - Audio cues for fills, rejects, cancels (toggle with S key)
-- **Dark/Light Theme** - Accessibility-friendly themes (toggle with T key)
-- **Keyboard Shortcuts** - N=order, 1-4=tabs, S=sound, T=theme, Esc=unfocus
-- **Error Boundaries** - Graceful component error handling
-- **Mobile Responsive** - Works on phones and tablets
+### Real-Time Data
+- WebSocket (RFC 6455) for low-latency updates
+- SSE fallback for browser compatibility
+- Live order book visualization
+- Market data streaming at 4Hz
+
+---
 
 ## Tech Stack
 
-### Backend (C++20)
-- QuickFIX 1.15.1 - FIX protocol engine
-- cpp-httplib - HTTP server with SSE support
-- nlohmann/json - JSON serialization
-- spdlog - Structured logging
-- GTest - Unit testing
+| Layer | Technologies |
+|-------|--------------|
+| **Backend** | C++20, QuickFIX 1.15.1, cpp-httplib, nlohmann/json, spdlog |
+| **Frontend** | React 18, TypeScript, Vite, TailwindCSS, Web Workers |
+| **Infrastructure** | Docker, GitHub Actions, Conan 2, CMake |
 
-### Frontend (React)
-- React 18 + TypeScript
-- Vite - Build tooling
-- TailwindCSS - Styling
-- Server-Sent Events - Real-time updates
+---
 
-### DevOps
-- Docker + Docker Compose
-- GitHub Actions CI/CD
-- Conan 2 - C++ package management
-- CMake - Build system
+## Getting Started
 
-## Quick Start
+### Prerequisites
 
-### Local Development
+- Docker & Docker Compose (recommended)
+- Or: Node.js 18+, Python 3, Conan 2, CMake, C++20 compiler
+
+### Option 1: Docker (Recommended)
+
+```bash
+git clone https://github.com/mdeadwiler/pf-blotter-fix.git
+cd pf-blotter-fix
+docker compose up --build
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+
+### Option 2: Local Development
 
 **Backend:**
 ```bash
@@ -91,8 +98,6 @@ cd pf-blotter_backend
 conan install . --build=missing -of=build -s build_type=Release
 cmake --preset conan-release
 cmake --build --preset conan-release
-
-# Start gateway
 ./build/build/Release/qf_gateway config/acceptor.cfg 8080
 ```
 
@@ -105,84 +110,65 @@ npm run dev
 
 Open http://localhost:5173
 
-### Docker Deployment
-
-```bash
-docker compose up --build
-```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080
-
-## Usage
-
-### Dashboard
-1. Sign in (mock auth)
-2. **Trading Tab** - Submit orders, view blotter, track positions
-3. **Algo Execution Tab** - Run VWAP/TWAP, configure strategies
-4. **Backtesting Tab** - Simulate strategies with risk metrics
-5. **Analytics Tab** - Portfolio optimization, options pricing, VaR
-6. Use keyboard shortcuts (press 1-4 to switch tabs)
-
-### CLI Sender (Optional)
-```bash
-./build/build/Release/qf_sender config/initiator.cfg
-
-# Commands:
-nos <clOrdId> <symbol> <Buy|Sell> <qty> <price>
-cancel <origClOrdId> <cancelClOrdId>
-quit
-```
+---
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/snapshot` | GET | Current order state |
+| `/snapshot` | GET | Current order state (JSON) |
 | `/events` | GET | SSE stream for order updates |
 | `/marketdata` | GET | SSE stream for price ticks |
-| `/orderbook?symbol=` | GET | Order book for symbol |
+| `/orderbook?symbol=` | GET | Order book depth for symbol |
 | `/stats` | GET | Performance statistics |
-| `/market-hours` | GET | Check if market is open (simulated) |
-| `/order` | POST | Submit new order (Limit or Market) |
+| `/market-hours` | GET | Simulated market hours check |
+| `/order` | POST | Submit new order |
 | `/cancel` | POST | Cancel order |
 | `/amend` | POST | Amend order price/quantity |
+
+---
 
 ## Project Structure
 
 ```
-PubFix/
 ├── pf-blotter_backend/
-│   ├── include/qfblotter/    # Headers
+│   ├── include/qfblotter/    # C++ headers
 │   ├── src/                  # Implementation
-│   ├── tests/                # Unit tests
-│   ├── config/               # FIX & logging config
+│   ├── tests/                # Unit tests (GTest)
+│   ├── config/               # FIX protocol config
 │   └── Dockerfile
 ├── pf-blotter_frontend/
 │   ├── src/
 │   │   ├── components/       # React components
-│   │   ├── hooks/            # Custom hooks
-│   │   └── utils/            # Utilities
+│   │   ├── hooks/            # Custom hooks (WebSocket, SSE)
+│   │   └── workers/          # Web Workers (Monte Carlo, Backtest)
 │   └── Dockerfile
 ├── docker-compose.yml
-└── .github/workflows/ci.yml
+├── TECHNICAL.md              # Detailed technical documentation
+└── .github/workflows/ci.yml  # CI/CD pipeline
 ```
 
-## Testing
+---
 
-**Backend:**
-```bash
-cd pf-blotter_backend
-ctest --preset conan-release --output-on-failure
-```
+## Disclaimer
 
-**Frontend:**
-```bash
-cd pf-blotter_frontend
-npm run build  # Type checking
-```
+**This is an educational project.**
+
+- All market data is **simulated** using random walk algorithms
+- **No real money** is involved
+- **Not connected to real exchanges** or market data feeds
+- Strategy results are for **demonstration purposes only**
+- This is **not financial advice**
+
+---
 
 ## License
 
 MIT
+
+---
+
+## Author
+
+Built by [Marquise Deadwiler](https://github.com/mdeadwiler) as a portfolio project demonstrating quantitative development skills.

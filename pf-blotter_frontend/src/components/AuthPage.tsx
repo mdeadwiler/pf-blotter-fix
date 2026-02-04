@@ -67,45 +67,59 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
           <h1 className="text-4xl font-bold text-neon-cyan neon-text mb-2">
             QuantBlotterSim
           </h1>
-          <p className="text-gray-400 mb-6">FIX 4.4 Order Gateway Simulator & Live Blotter</p>
+          <p className="text-gray-400 mb-6">FIX Protocol Order Management System Simulator</p>
           
-          <div className="max-w-2xl mx-auto bg-dark-800/50 rounded-lg p-4 border border-dark-600">
-            <p className="text-gray-300 text-sm leading-relaxed">
-              Ever wondered how Wall Street's trading systems handle orders in real-time? 
-              This is your playground. Submit buy/sell orders, watch them fill (or partially fill), 
-              track your P&L, and see the order book dance—all powered by the same FIX protocol 
-              the pros use.
+          {/* Project Description */}
+          <div className="max-w-2xl mx-auto bg-dark-800/50 rounded-lg p-5 border border-dark-600 text-left">
+            <h3 className="text-sm font-semibold text-neon-cyan mb-3">What is this?</h3>
+            <p className="text-gray-300 text-sm leading-relaxed mb-4">
+              A full-stack trading system simulator built to demonstrate quantitative development skills. 
+              The backend implements the <strong className="text-white">FIX 4.4 protocol</strong>—the same 
+              messaging standard used by investment banks, hedge funds, and exchanges worldwide for 
+              electronic order routing.
             </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-neon-green rounded-full"></span>
-                Submit orders
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-neon-cyan rounded-full"></span>
-                Watch live fills
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-neon-yellow rounded-full"></span>
-                Track positions
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-neon-red rounded-full"></span>
-                Cancel anytime
-              </span>
+            
+            <h3 className="text-sm font-semibold text-neon-cyan mb-3">Key Technical Features</h3>
+            <div className="grid grid-cols-2 gap-3 text-xs text-gray-400 mb-4">
+              <div className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 bg-neon-cyan rounded-full mt-1.5 flex-shrink-0"></span>
+                <span><strong className="text-gray-300">C++20 Backend</strong> — QuickFIX engine, WebSocket/SSE streaming, reader-writer locks</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 bg-neon-green rounded-full mt-1.5 flex-shrink-0"></span>
+                <span><strong className="text-gray-300">React Frontend</strong> — TypeScript, Web Workers for heavy computation</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 bg-neon-yellow rounded-full mt-1.5 flex-shrink-0"></span>
+                <span><strong className="text-gray-300">Algo Trading</strong> — VWAP, TWAP, Bollinger, RSI, Pairs Trading strategies</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 bg-neon-red rounded-full mt-1.5 flex-shrink-0"></span>
+                <span><strong className="text-gray-300">Quant Tools</strong> — Black-Scholes, Monte Carlo VaR, Portfolio Optimization</span>
+              </div>
             </div>
+            
+            <p className="text-gray-500 text-xs">
+              Built as a portfolio project demonstrating infrastructure used in quantitative finance. 
+              View the <a href="https://github.com/mdeadwiler/pf-blotter-fix" target="_blank" rel="noopener noreferrer" className="text-neon-cyan hover:underline">source code on GitHub</a> for 
+              implementation details.
+            </p>
           </div>
           
-          {/* Simulation disclaimer */}
-          <div className="max-w-2xl mx-auto mt-4 bg-neon-yellow/10 rounded-lg p-3 border border-neon-yellow/30">
-            <div className="flex items-start gap-2">
+          {/* Important Disclaimer */}
+          <div className="max-w-2xl mx-auto mt-4 bg-neon-yellow/10 rounded-lg p-4 border border-neon-yellow/30">
+            <div className="flex items-start gap-3">
               <svg className="w-5 h-5 text-neon-yellow flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <div className="text-xs text-gray-400">
-                <span className="text-neon-yellow font-medium">Educational Simulator:</span>{' '}
-                All prices are <strong className="text-gray-300">simulated</strong> and do not reflect real market data. 
-                No real money is involved. This tool is for learning FIX protocol mechanics only—not for actual trading decisions.
+              <div className="text-left">
+                <p className="text-neon-yellow font-semibold text-sm mb-1">Educational Simulation Only</p>
+                <ul className="text-xs text-gray-400 space-y-1">
+                  <li>• <strong className="text-gray-300">All prices are synthetic</strong> — generated via random walk, not connected to real markets</li>
+                  <li>• <strong className="text-gray-300">No real money</strong> — this is a demonstration of trading system architecture</li>
+                  <li>• <strong className="text-gray-300">Not financial advice</strong> — strategy results are for learning purposes only</li>
+                  <li>• <strong className="text-gray-300">Mock authentication</strong> — credentials are stored locally in your browser</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -165,6 +179,10 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
+
+            <p className="text-xs text-gray-500 mt-4 text-center">
+              Demo credentials: any email/password combination works
+            </p>
           </div>
 
           {/* Sign Up */}
@@ -251,9 +269,20 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-600 text-sm mt-8">
-          Built with C++, QuickFIX & React • Your data stays in your browser
-        </p>
+        <div className="text-center mt-8 space-y-2">
+          <p className="text-gray-500 text-sm">
+            Built with C++20, QuickFIX, React & TypeScript
+          </p>
+          <p className="text-gray-600 text-xs">
+            <a href="https://github.com/mdeadwiler/pf-blotter-fix" target="_blank" rel="noopener noreferrer" className="hover:text-neon-cyan transition-colors">
+              View Source Code
+            </a>
+            {' • '}
+            <a href="https://github.com/mdeadwiler/pf-blotter-fix/blob/main/TECHNICAL.md" target="_blank" rel="noopener noreferrer" className="hover:text-neon-cyan transition-colors">
+              Technical Documentation
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
