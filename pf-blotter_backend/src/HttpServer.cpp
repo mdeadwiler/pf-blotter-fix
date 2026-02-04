@@ -178,14 +178,50 @@ private:
     std::thread cleanupThread_;
 };
 
-// Get allowed CORS origins from environment or use defaults
-std::string getAllowedOrigins() {
+// Get allowed CORS origins as a set
+std::set<std::string> getAllowedOriginsSet() {
+    std::set<std::string> origins;
+    
+    // Always allow these for development
+    origins.insert("http://localhost:5173");
+    origins.insert("http://localhost:3000");
+    
+    // Production domain
+    origins.insert("https://quantblottersim.onrender.com");
+    
+    // Check for additional origins from environment
     const char* env = std::getenv("CORS_ALLOWED_ORIGINS");
     if (env && *env) {
-        return env;
+        std::string envStr(env);
+        size_t pos = 0;
+        while (pos < envStr.size()) {
+            size_t comma = envStr.find(',', pos);
+            if (comma == std::string::npos) comma = envStr.size();
+            std::string origin = envStr.substr(pos, comma - pos);
+            // Trim whitespace
+            size_t start = origin.find_first_not_of(" \t");
+            size_t end = origin.find_last_not_of(" \t");
+            if (start != std::string::npos && end != std::string::npos) {
+                origins.insert(origin.substr(start, end - start + 1));
+            }
+            pos = comma + 1;
+        }
     }
-    // Default: allow localhost for dev, and production domain
-    return "http://localhost:5173, http://localhost:3000, https://quantblottersim.onrender.com";
+    
+    return origins;
+}
+
+// Check if origin is allowed and return appropriate CORS headers
+std::string getCorsOrigin(const std::string& requestOrigin, const std::set<std::string>& allowedOrigins) {
+    if (requestOrigin.empty()) {
+        // No origin header - allow (same-origin request or non-browser)
+        return "";
+    }
+    if (allowedOrigins.count(requestOrigin)) {
+        return requestOrigin;
+    }
+    // Origin not allowed - return empty (browser will block)
+    return "";
 }
 
 }  // namespace
@@ -195,19 +231,18 @@ public:
     Impl(int port, SnapshotProvider snapshotProvider)
         : port_(port), snapshotProvider_(std::move(snapshotProvider)),
           orderRateLimiter_(60, 60),   // 60 orders per minute per IP
-          cancelRateLimiter_(30, 60) { // 30 cancels per minute per IP
+          cancelRateLimiter_(30, 60),  // 30 cancels per minute per IP
+          allowedOrigins_(getAllowedOriginsSet()) {
         
-        // CORS middleware - use environment variable or safe defaults
-        std::string allowedOrigins = getAllowedOrigins();
-        server_.set_default_headers({
-            {"Access-Control-Allow-Origin", allowedOrigins},
-            {"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
-            {"Access-Control-Allow-Headers", "Content-Type"},
-            {"Access-Control-Max-Age", "86400"}  // Cache preflight for 24h
+        // CORS middleware - set per-request based on Origin header
+        server_.set_pre_routing_handler([this](const httplib::Request& req, httplib::Response& res) {
+            setCorsHeaders(req, res);
+            return httplib::Server::HandlerResponse::Unhandled;  // Continue to actual handler
         });
 
         // Handle CORS preflight
-        server_.Options(".*", [](const httplib::Request&, httplib::Response& res) {
+        server_.Options(".*", [this](const httplib::Request& req, httplib::Response& res) {
+            setCorsHeaders(req, res);
             res.set_content("", "text/plain");
         });
 
@@ -589,6 +624,20 @@ public:
     }
 
 private:
+    // Set CORS headers based on request Origin
+    void setCorsHeaders(const httplib::Request& req, httplib::Response& res) {
+        std::string origin = req.get_header_value("Origin");
+        std::string corsOrigin = getCorsOrigin(origin, allowedOrigins_);
+        
+        if (!corsOrigin.empty()) {
+            res.set_header("Access-Control-Allow-Origin", corsOrigin);
+            res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            res.set_header("Access-Control-Allow-Headers", "Content-Type");
+            res.set_header("Access-Control-Max-Age", "86400");
+            res.set_header("Vary", "Origin");  // Important for proper caching
+        }
+    }
+
     int port_;
     SnapshotProvider snapshotProvider_;
     OrderHandler orderHandler_;
@@ -605,6 +654,7 @@ private:
     SseBroker marketBroker_;  // Separate broker for market data
     RateLimiter orderRateLimiter_;   // Rate limiter for order submissions
     RateLimiter cancelRateLimiter_;  // Rate limiter for cancel requests
+    std::set<std::string> allowedOrigins_;  // Set of allowed CORS origins
 };
 
 HttpServer::HttpServer(int port, SnapshotProvider snapshotProvider)
