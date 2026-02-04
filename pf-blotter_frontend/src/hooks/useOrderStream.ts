@@ -9,6 +9,17 @@ interface UseOrderStreamReturn {
   reconnect: () => void;
 }
 
+// Exponential backoff with jitter (industry standard pattern)
+function calculateBackoffWithJitter(
+  attempt: number,
+  baseMs: number,
+  maxMs: number
+): number {
+  const exponential = Math.min(maxMs, baseMs * Math.pow(2, attempt));
+  const jitter = exponential * 0.3 * Math.random(); // 30% jitter
+  return Math.floor(exponential + jitter);
+}
+
 // Validate that parsed data is a valid orders array
 function isValidOrdersArray(data: unknown): data is Order[] {
   if (!Array.isArray(data)) return false;
@@ -125,8 +136,13 @@ export function useOrderStream(): UseOrderStreamReturn {
         refreshIntervalRef.current = null;
       }
       
-      // Exponential backoff reconnection
-      const delay = retryDelayRef.current;
+      // Exponential backoff with jitter
+      const attempt = Math.log2(retryDelayRef.current / API_CONFIG.sse.initialRetryDelay);
+      const delay = calculateBackoffWithJitter(
+        attempt,
+        API_CONFIG.sse.initialRetryDelay,
+        API_CONFIG.sse.maxRetryDelay
+      );
       setError(`Connection lost. Reconnecting in ${Math.round(delay / 1000)}s...`);
       
       retryTimeoutRef.current = setTimeout(() => {

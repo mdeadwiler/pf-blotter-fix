@@ -18,8 +18,15 @@ interface UseWebSocketReturn {
   reconnect: () => void;
 }
 
+// Exponential backoff with jitter (industry standard)
+function calculateBackoff(attempt: number, baseMs: number, maxMs: number): number {
+  const exponential = Math.min(maxMs, baseMs * Math.pow(2, attempt));
+  const jitter = exponential * 0.2 * Math.random(); // 20% jitter
+  return exponential + jitter;
+}
+
 /**
- * Hybrid WebSocket/SSE hook
+ * Hybrid WebSocket/SSE hook with proper cleanup and backoff
  * Attempts WebSocket first for sub-millisecond latency,
  * falls back to SSE if WebSocket is not available.
  */
@@ -30,23 +37,38 @@ export function useWebSocket(
   const {
     onMessage,
     onError,
-    reconnectInterval = 3000,
-    maxReconnectAttempts = 5,
+    reconnectInterval = 1000,
+    maxReconnectAttempts = 10,
   } = options;
 
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [latencyMs, setLatencyMs] = useState(0);
   const [protocol, setProtocol] = useState<'websocket' | 'sse' | 'none'>('none');
   
+  // Use refs to avoid stale closures in callbacks
   const wsRef = useRef<WebSocket | null>(null);
   const sseRef = useRef<EventSource | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastMessageTimeRef = useRef<number>(Date.now());
+  const mountedRef = useRef(true);
+  const statusRef = useRef<ConnectionStatus>('connecting');
+  
+  // Keep status ref in sync
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  // Stable refs for callbacks to avoid effect dependency issues
+  const onMessageRef = useRef(onMessage);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onErrorRef.current = onError;
+  }, [onMessage, onError]);
 
   const getWebSocketUrl = useCallback(() => {
     const baseUrl = API_CONFIG.baseUrl;
-    // Convert http(s) to ws(s)
     const wsUrl = baseUrl.replace(/^http/, 'ws');
     return `${wsUrl}${endpoint}`;
   }, [endpoint]);
@@ -59,62 +81,69 @@ export function useWebSocket(
     const now = Date.now();
     const latency = now - lastMessageTimeRef.current;
     lastMessageTimeRef.current = now;
-    setLatencyMs(latency);
+    // Only update latency if reasonable (< 10s, to filter out reconnection gaps)
+    if (latency < 10000) {
+      setLatencyMs(latency);
+    }
+    onMessageRef.current?.(data);
+  }, []);
+
+  const cleanup = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = undefined;
+    }
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (sseRef.current) {
+      sseRef.current.onopen = null;
+      sseRef.current.onerror = null;
+      sseRef.current.onmessage = null;
+      sseRef.current.close();
+      sseRef.current = null;
+    }
+  }, []);
+
+  const scheduleReconnect = useCallback(() => {
+    if (!mountedRef.current) return;
     
-    if (onMessage) {
-      onMessage(data);
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      setStatus('error');
+      return;
     }
-  }, [onMessage]);
 
-  const connectWebSocket = useCallback(() => {
-    try {
-      const wsUrl = getWebSocketUrl();
-      const ws = new WebSocket(wsUrl);
-      
-      ws.onopen = () => {
-        setStatus('connected');
-        setProtocol('websocket');
-        reconnectAttemptsRef.current = 0;
-        console.log('[WebSocket] Connected');
-      };
+    const backoff = calculateBackoff(
+      reconnectAttemptsRef.current,
+      reconnectInterval,
+      30000 // Max 30 seconds
+    );
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleMessage(data);
-        } catch {
-          handleMessage(event.data);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.warn('[WebSocket] Error, falling back to SSE:', error);
-        onError?.(error);
-        // Try SSE fallback
-        ws.close();
-        connectSSE();
-      };
-
-      ws.onclose = () => {
-        if (status === 'connected') {
-          setStatus('disconnected');
-          scheduleReconnect();
-        }
-      };
-
-      wsRef.current = ws;
-    } catch {
-      // WebSocket not supported, use SSE
-      connectSSE();
-    }
-  }, [getWebSocketUrl, handleMessage, onError, status]);
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
+      reconnectAttemptsRef.current++;
+      setStatus('connecting');
+      connectWebSocket();
+    }, backoff);
+  }, [reconnectInterval, maxReconnectAttempts]);
 
   const connectSSE = useCallback(() => {
+    if (!mountedRef.current) return;
+    
     try {
+      cleanup(); // Clean up any existing connections
+      
       const sseUrl = getSseUrl();
       const sse = new EventSource(sseUrl);
+      sseRef.current = sse;
       
       sse.onopen = () => {
+        if (!mountedRef.current) return;
         setStatus('connected');
         setProtocol('sse');
         reconnectAttemptsRef.current = 0;
@@ -122,6 +151,7 @@ export function useWebSocket(
       };
 
       sse.onmessage = (event) => {
+        if (!mountedRef.current) return;
         try {
           const data = JSON.parse(event.data);
           handleMessage(data);
@@ -131,32 +161,75 @@ export function useWebSocket(
       };
 
       sse.onerror = (error) => {
+        if (!mountedRef.current) return;
         console.warn('[SSE] Error:', error);
-        setStatus('error');
-        onError?.(error);
+        setStatus('disconnected');
+        onErrorRef.current?.(error);
         sse.close();
+        sseRef.current = null;
         scheduleReconnect();
       };
-
-      sseRef.current = sse;
     } catch (error) {
       console.error('[SSE] Failed to connect:', error);
-      setStatus('error');
+      if (mountedRef.current) {
+        setStatus('error');
+      }
     }
-  }, [getSseUrl, handleMessage, onError]);
+  }, [getSseUrl, handleMessage, cleanup, scheduleReconnect]);
 
-  const scheduleReconnect = useCallback(() => {
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      setStatus('error');
-      return;
+  const connectWebSocket = useCallback(() => {
+    if (!mountedRef.current) return;
+    
+    try {
+      cleanup(); // Clean up any existing connections
+      
+      const wsUrl = getWebSocketUrl();
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        if (!mountedRef.current) return;
+        setStatus('connected');
+        setProtocol('websocket');
+        reconnectAttemptsRef.current = 0;
+        console.log('[WebSocket] Connected');
+      };
+
+      ws.onmessage = (event) => {
+        if (!mountedRef.current) return;
+        try {
+          const data = JSON.parse(event.data);
+          handleMessage(data);
+        } catch {
+          handleMessage(event.data);
+        }
+      };
+
+      ws.onerror = (error) => {
+        if (!mountedRef.current) return;
+        console.warn('[WebSocket] Error, falling back to SSE:', error);
+        onErrorRef.current?.(error);
+        ws.close();
+        wsRef.current = null;
+        // Try SSE fallback
+        connectSSE();
+      };
+
+      ws.onclose = () => {
+        if (!mountedRef.current) return;
+        wsRef.current = null;
+        
+        // Only reconnect if we were previously connected (not during initial connection)
+        if (statusRef.current === 'connected') {
+          setStatus('disconnected');
+          scheduleReconnect();
+        }
+      };
+    } catch {
+      // WebSocket not supported, use SSE
+      connectSSE();
     }
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      reconnectAttemptsRef.current++;
-      setStatus('connecting');
-      connectWebSocket();
-    }, reconnectInterval * Math.pow(2, reconnectAttemptsRef.current)); // Exponential backoff
-  }, [connectWebSocket, maxReconnectAttempts, reconnectInterval]);
+  }, [getWebSocketUrl, handleMessage, cleanup, connectSSE, scheduleReconnect]);
 
   const send = useCallback((message: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -167,31 +240,22 @@ export function useWebSocket(
   }, []);
 
   const reconnect = useCallback(() => {
-    // Close existing connections
-    wsRef.current?.close();
-    sseRef.current?.close();
-    
-    // Reset state
+    cleanup();
     reconnectAttemptsRef.current = 0;
     setStatus('connecting');
-    
-    // Reconnect
     connectWebSocket();
-  }, [connectWebSocket]);
+  }, [cleanup, connectWebSocket]);
 
-  const cleanup = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    wsRef.current?.close();
-    sseRef.current?.close();
-  }, []);
-
+  // Initialize connection - stable effect
   useEffect(() => {
+    mountedRef.current = true;
     connectWebSocket();
     
-    return cleanup;
-  }, [connectWebSocket, cleanup]);
+    return () => {
+      mountedRef.current = false;
+      cleanup();
+    };
+  }, [endpoint]); // Only re-run if endpoint changes
 
   return {
     status,

@@ -112,23 +112,28 @@ function impliedVolatility(
   r: number,
   isCall: boolean
 ): ImpliedVolResult {
-  let sigma = 0.3; // Initial guess
+  if (T <= 0) return { iv: 0, iterations: 0 };
+  
+  let sigma = 0.3; // Initial guess (30% vol)
   const tolerance = 0.0001;
   const maxIterations = 100;
   
   for (let i = 0; i < maxIterations; i++) {
     const price = blackScholes(S, K, T, r, sigma, isCall);
-    const vega = calculateGreeks(S, K, T, r, sigma, isCall).vega * 100; // Scale back
     
-    if (Math.abs(vega) < 0.0001) break; // Avoid division by zero
+    // Raw vega = S * N'(d1) * sqrt(T) - the unscaled derivative
+    const { d1 } = calculateD1D2(S, K, T, r, sigma);
+    const rawVega = S * normalPDF(d1) * Math.sqrt(T);
+    
+    if (rawVega < 0.0001) break; // Avoid division by zero
     
     const diff = price - targetPrice;
     if (Math.abs(diff) < tolerance) {
       return { iv: sigma * 100, iterations: i + 1 };
     }
     
-    sigma = sigma - diff / vega;
-    sigma = Math.max(0.01, Math.min(5, sigma)); // Bound sigma
+    sigma = sigma - diff / rawVega;
+    sigma = Math.max(0.01, Math.min(5, sigma)); // Bound sigma (1% to 500%)
   }
   
   return { iv: sigma * 100, iterations: maxIterations };

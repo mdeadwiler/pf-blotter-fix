@@ -1,6 +1,8 @@
 #include "qfblotter/HttpServer.hpp"
 
 #include <chrono>
+#include <cmath>
+#include <cctype>
 #include <condition_variable>
 #include <cstring>
 #include <deque>
@@ -17,6 +19,41 @@
 namespace qfblotter {
 
 namespace {
+
+// Constants for validation and limits
+constexpr size_t MAX_REQUEST_BODY_SIZE = 65536;  // 64KB max request body
+constexpr size_t MAX_CLORDID_LENGTH = 64;
+constexpr size_t MAX_SYMBOL_LENGTH = 16;
+constexpr int MAX_QUANTITY = 1000000;
+constexpr double MAX_PRICE = 1000000.0;
+
+// Input validation helpers
+bool isValidClOrdId(const std::string& clOrdId) {
+    if (clOrdId.empty() || clOrdId.length() > MAX_CLORDID_LENGTH) return false;
+    // Allow alphanumeric, underscore, hyphen
+    for (char c : clOrdId) {
+        if (!std::isalnum(c) && c != '_' && c != '-') return false;
+    }
+    return true;
+}
+
+bool isValidSymbol(const std::string& symbol) {
+    if (symbol.empty() || symbol.length() > MAX_SYMBOL_LENGTH) return false;
+    // Allow uppercase alphanumeric only
+    for (char c : symbol) {
+        if (!std::isalnum(c)) return false;
+    }
+    return true;
+}
+
+bool isValidQuantity(int qty) {
+    return qty > 0 && qty <= MAX_QUANTITY;
+}
+
+bool isValidPrice(double price) {
+    return price >= 0.0 && price <= MAX_PRICE && !std::isnan(price) && !std::isinf(price);
+}
+
 struct Subscriber {
     std::mutex mutex;
     std::condition_variable cv;
@@ -143,8 +180,15 @@ public:
             res.set_content(snapshotProvider_(), "application/json");
         });
 
-        // POST /order - Submit new order (rate limited)
+        // POST /order - Submit new order (rate limited + validated)
         server_.Post("/order", [this](const httplib::Request& req, httplib::Response& res) {
+            // Request size limit (DoS protection)
+            if (req.body.size() > MAX_REQUEST_BODY_SIZE) {
+                res.status = 413;
+                res.set_content(R"({"error":"Request body too large"})", "application/json");
+                return;
+            }
+
             // Rate limiting check
             if (!orderRateLimiter_.allow(req.remote_addr)) {
                 res.status = 429;
@@ -167,9 +211,30 @@ public:
                 order.side = (sideStr == "Buy" || sideStr == "1") ? '1' : '2';
                 order.quantity = json.at("quantity").get<int>();
                 order.price = json.at("price").get<double>();
-                // Order type: Market ('1') or Limit ('2', default)
                 std::string orderTypeStr = json.value("orderType", "Limit");
                 order.orderType = (orderTypeStr == "Market" || orderTypeStr == "1") ? '1' : '2';
+
+                // Input validation
+                if (!isValidClOrdId(order.clOrdId)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid clOrdId: must be 1-64 alphanumeric characters"})", "application/json");
+                    return;
+                }
+                if (!isValidSymbol(order.symbol)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid symbol: must be 1-16 alphanumeric characters"})", "application/json");
+                    return;
+                }
+                if (!isValidQuantity(order.quantity)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid quantity: must be 1-1,000,000"})", "application/json");
+                    return;
+                }
+                if (order.orderType == '2' && !isValidPrice(order.price)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid price: must be 0-1,000,000"})", "application/json");
+                    return;
+                }
 
                 std::string errorMsg;
                 bool success = orderHandler_(order, errorMsg);
@@ -190,8 +255,15 @@ public:
             }
         });
 
-        // POST /cancel - Cancel order (rate limited)
+        // POST /cancel - Cancel order (rate limited + validated)
         server_.Post("/cancel", [this](const httplib::Request& req, httplib::Response& res) {
+            // Request size limit
+            if (req.body.size() > MAX_REQUEST_BODY_SIZE) {
+                res.status = 413;
+                res.set_content(R"({"error":"Request body too large"})", "application/json");
+                return;
+            }
+
             // Rate limiting check
             if (!cancelRateLimiter_.allow(req.remote_addr)) {
                 res.status = 429;
@@ -210,6 +282,13 @@ public:
                 CancelRequest cancel;
                 cancel.origClOrdId = json.at("origClOrdId").get<std::string>();
                 cancel.clOrdId = json.value("clOrdId", cancel.origClOrdId + "_CXL");
+
+                // Input validation
+                if (!isValidClOrdId(cancel.origClOrdId) || !isValidClOrdId(cancel.clOrdId)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid clOrdId format"})", "application/json");
+                    return;
+                }
 
                 std::string errorMsg;
                 bool success = cancelHandler_(cancel, errorMsg);
@@ -230,8 +309,15 @@ public:
             }
         });
 
-        // POST /amend - Amend order (rate limited)
+        // POST /amend - Amend order (rate limited + validated)
         server_.Post("/amend", [this](const httplib::Request& req, httplib::Response& res) {
+            // Request size limit
+            if (req.body.size() > MAX_REQUEST_BODY_SIZE) {
+                res.status = 413;
+                res.set_content(R"({"error":"Request body too large"})", "application/json");
+                return;
+            }
+
             if (!orderRateLimiter_.allow(req.remote_addr)) {
                 res.status = 429;
                 res.set_content(R"({"error":"Rate limit exceeded."})", "application/json");
@@ -251,6 +337,23 @@ public:
                 amend.clOrdId = json.value("clOrdId", amend.origClOrdId + "_AMD");
                 amend.newQuantity = json.value("quantity", 0);
                 amend.newPrice = json.value("price", 0.0);
+
+                // Input validation
+                if (!isValidClOrdId(amend.origClOrdId) || !isValidClOrdId(amend.clOrdId)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid clOrdId format"})", "application/json");
+                    return;
+                }
+                if (amend.newQuantity != 0 && !isValidQuantity(amend.newQuantity)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid quantity"})", "application/json");
+                    return;
+                }
+                if (amend.newPrice != 0.0 && !isValidPrice(amend.newPrice)) {
+                    res.status = 400;
+                    res.set_content(R"({"error":"Invalid price"})", "application/json");
+                    return;
+                }
 
                 std::string errorMsg;
                 bool success = amendHandler_(amend, errorMsg);

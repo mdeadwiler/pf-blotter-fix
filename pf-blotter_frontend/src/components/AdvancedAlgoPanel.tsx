@@ -363,23 +363,38 @@ export function AdvancedAlgoPanel() {
     setConfig(prev => ({ ...prev, enabled: true }));
   };
 
+  // Use ref for strategy function to avoid effect dependency issues
+  const runStrategyRef = useRef(runStrategy);
   useEffect(() => {
+    runStrategyRef.current = runStrategy;
+  }, [runStrategy]);
+
+  // Stable interval management - only depends on config changes, not callback
+  useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (config.enabled) {
       const interval = config.strategy === 'twap' || config.strategy === 'vwap' 
         ? config.intervalMs 
         : 3000;
-      intervalRef.current = setInterval(runStrategy, interval);
-    } else {
+      
+      // Use ref to call latest strategy function
+      intervalRef.current = setInterval(() => {
+        runStrategyRef.current();
+      }, interval);
+    }
+    
+    return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-    }
-    
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [config.enabled, config.strategy, config.intervalMs, runStrategy]);
+  }, [config.enabled, config.strategy, config.intervalMs]);
 
   const isExecutionAlgo = config.strategy === 'vwap' || config.strategy === 'twap';
 
