@@ -27,6 +27,7 @@ For a detailed technical breakdown of the implementation, see [TECHNICAL.md](./T
 |----------|------|
 | **Live Demo** | [quantblottersim.onrender.com](https://quantblottersim.onrender.com) |
 | **Technical Documentation** | [TECHNICAL.md](./TECHNICAL.md) |
+| **Contributing Guide** | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | **API Reference** | [API Endpoints](#api-endpoints) |
 | **Source Code** | [GitHub Repository](https://github.com/mdeadwiler/pf-blotter-fix) |
 
@@ -147,6 +148,27 @@ Open http://localhost:5173
 ├── docker-compose.yml
 ├── TECHNICAL.md              # Detailed technical documentation
 └── .github/workflows/ci.yml  # CI/CD pipeline
+```
+
+---
+
+## Contributing
+
+We welcome contributions! See our [Contributing Guide](./CONTRIBUTING.md) for detailed instructions on:
+
+- Setting up your development environment
+- Branch naming conventions and workflow
+- Testing requirements
+- Code review and merge process
+
+**Quick start for contributors:**
+```bash
+git checkout dev
+git pull origin dev
+git checkout -b feature/your-feature-name
+# Make changes, test, commit
+git push -u origin feature/your-feature-name
+# Create PR to dev branch
 ```
 
 ---
