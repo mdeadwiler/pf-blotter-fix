@@ -57,7 +57,7 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden py-12">
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -66,12 +66,12 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
         }}
       />
       {/* Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-black/80" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/70 to-black/85" />
       
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md mx-auto px-4 py-8 sm:px-6">
+      <div className="relative z-10 w-full max-w-lg mx-auto px-4 sm:px-6">
         {/* Logo & Branding */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 mb-4 backdrop-blur-sm">
             <svg className="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -85,7 +85,50 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
           </p>
         </div>
 
-        {/* Glass Card */}
+        {/* Project Description */}
+        <div className="backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 p-5 mb-6">
+          <h3 className="text-sm font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            What is this?
+          </h3>
+          <p className="text-gray-300 text-sm leading-relaxed mb-4">
+            A full-stack trading system simulator built to demonstrate quantitative development skills. 
+            The backend implements the <span className="text-white font-medium">FIX 4.4 protocol</span>—the 
+            same messaging standard used by investment banks, hedge funds, and exchanges worldwide for 
+            electronic order routing.
+          </p>
+          
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">Real-time order streaming via SSE</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">C++20 backend with QuickFIX engine</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">10+ algorithmic trading strategies</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">Backtesting engine with metrics</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">Portfolio optimization & Black-Scholes</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-emerald-400 mt-0.5">✓</span>
+              <span className="text-gray-400">Monte Carlo VaR simulation</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Glass Card - Auth Form */}
         <div className="backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
           {/* Tab Navigation */}
           <div className="flex border-b border-white/10">
@@ -282,33 +325,21 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
           </div>
         </div>
 
-        {/* Feature Highlights */}
-        <div className="mt-8 grid grid-cols-3 gap-3 text-center">
-          <div className="p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/5">
-            <div className="text-cyan-400 text-lg font-bold">FIX 4.4</div>
-            <div className="text-gray-500 text-xs mt-1">Protocol</div>
-          </div>
-          <div className="p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/5">
-            <div className="text-emerald-400 text-lg font-bold">Real-Time</div>
-            <div className="text-gray-500 text-xs mt-1">Streaming</div>
-          </div>
-          <div className="p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/5">
-            <div className="text-amber-400 text-lg font-bold">10+</div>
-            <div className="text-gray-500 text-xs mt-1">Algo Strategies</div>
-          </div>
-        </div>
-
-        {/* Disclaimer */}
-        <div className="mt-6 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 backdrop-blur-sm">
+        {/* Important Disclaimer */}
+        <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 backdrop-blur-sm">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div>
-              <p className="text-amber-400 font-medium text-sm">Educational Simulation</p>
-              <p className="text-gray-400 text-xs mt-1 leading-relaxed">
-                All prices are synthetic. No real money involved. Not financial advice.
-              </p>
+              <p className="text-amber-400 font-semibold text-sm mb-2">Important Disclaimer</p>
+              <ul className="text-gray-400 text-xs space-y-1 leading-relaxed">
+                <li>• <span className="text-gray-300">Educational purposes only</span> — This is a portfolio project demonstrating quantitative development skills</li>
+                <li>• <span className="text-gray-300">Synthetic data</span> — All market prices, orders, and fills are simulated</li>
+                <li>• <span className="text-gray-300">No real money</span> — This system does not connect to any live exchange or broker</li>
+                <li>• <span className="text-gray-300">Not financial advice</span> — Nothing here constitutes investment recommendations</li>
+                <li>• <span className="text-gray-300">Mock authentication</span> — Credentials are not stored securely (demo only)</li>
+              </ul>
             </div>
           </div>
         </div>

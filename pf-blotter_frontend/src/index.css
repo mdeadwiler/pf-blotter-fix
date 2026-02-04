@@ -181,12 +181,7 @@ input:focus, select:focus, button:focus-visible {
   box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3);
 }
 
-/* Smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
+/* Note: Removed global transitions to prevent twitching during state updates */
 
 /* Light theme overrides */
 .light-theme {
