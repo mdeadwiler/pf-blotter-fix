@@ -1,9 +1,11 @@
 #include "qfblotter/HttpServer.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cctype>
 #include <condition_variable>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <functional>
@@ -11,6 +13,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 #include <httplib.h>
@@ -99,11 +102,33 @@ std::string sse_market_frame(const std::string& data) {
     return "event: marketdata\ndata: " + data + "\n\n";
 }
 
-// Simple rate limiter - tracks requests per IP
+// Simple rate limiter with automatic cleanup - tracks requests per IP
 class RateLimiter {
 public:
     RateLimiter(int maxRequests, int windowSeconds)
-        : maxRequests_(maxRequests), windowMs_(windowSeconds * 1000) {}
+        : maxRequests_(maxRequests), windowMs_(windowSeconds * 1000),
+          running_(true) {
+        // Start background cleanup thread
+        cleanupThread_ = std::thread([this]() {
+            while (running_.load()) {
+                std::this_thread::sleep_for(std::chrono::seconds(60));
+                if (running_.load()) {
+                    cleanup();
+                }
+            }
+        });
+    }
+    
+    ~RateLimiter() {
+        running_.store(false);
+        if (cleanupThread_.joinable()) {
+            cleanupThread_.join();
+        }
+    }
+    
+    // Non-copyable
+    RateLimiter(const RateLimiter&) = delete;
+    RateLimiter& operator=(const RateLimiter&) = delete;
 
     bool allow(const std::string& ip) {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -126,7 +151,8 @@ public:
         return true;
     }
 
-    // Cleanup old entries periodically
+private:
+    // Cleanup old entries - runs periodically in background
     void cleanup() {
         std::lock_guard<std::mutex> lock(mutex_);
         auto now = std::chrono::steady_clock::now();
@@ -144,12 +170,23 @@ public:
         }
     }
 
-private:
     int maxRequests_;
     int windowMs_;
     std::mutex mutex_;
     std::unordered_map<std::string, std::deque<std::chrono::steady_clock::time_point>> records_;
+    std::atomic<bool> running_;
+    std::thread cleanupThread_;
 };
+
+// Get allowed CORS origins from environment or use defaults
+std::string getAllowedOrigins() {
+    const char* env = std::getenv("CORS_ALLOWED_ORIGINS");
+    if (env && *env) {
+        return env;
+    }
+    // Default: allow localhost for dev, and production domain
+    return "http://localhost:5173, http://localhost:3000, https://quantblottersim.onrender.com";
+}
 
 }  // namespace
 
@@ -160,11 +197,13 @@ public:
           orderRateLimiter_(60, 60),   // 60 orders per minute per IP
           cancelRateLimiter_(30, 60) { // 30 cancels per minute per IP
         
-        // CORS middleware for all requests
+        // CORS middleware - use environment variable or safe defaults
+        std::string allowedOrigins = getAllowedOrigins();
         server_.set_default_headers({
-            {"Access-Control-Allow-Origin", "*"},
+            {"Access-Control-Allow-Origin", allowedOrigins},
             {"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
-            {"Access-Control-Allow-Headers", "Content-Type"}
+            {"Access-Control-Allow-Headers", "Content-Type"},
+            {"Access-Control-Max-Age", "86400"}  // Cache preflight for 24h
         });
 
         // Handle CORS preflight

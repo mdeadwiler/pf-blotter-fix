@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 interface SimulationConfig {
   portfolioValue: number;
@@ -29,105 +29,54 @@ const DEFAULT_CONFIG: SimulationConfig = {
   confidenceLevel: 95,
 };
 
-// Box-Muller transform for normal random numbers
-function randomNormal(): number {
-  let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
-
 export function MonteCarloVaR() {
   const [config, setConfig] = useState<SimulationConfig>(DEFAULT_CONFIG);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const workerRef = useRef<Worker | null>(null);
+
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
 
   const runSimulation = useCallback(() => {
     setIsRunning(true);
+    setProgress(0);
     
-    // Use setTimeout to avoid blocking UI
-    setTimeout(() => {
-      const {
-        portfolioValue,
-        expectedReturn,
-        volatility,
-        timeHorizon,
-        numSimulations,
-        confidenceLevel,
-      } = config;
-
-      const mu = expectedReturn / 100;
-      const sigma = volatility / 100;
-      const finalValues: number[] = [];
-      const samplePaths: number[][] = [];
-
-      // Run Monte Carlo simulation
-      for (let sim = 0; sim < numSimulations; sim++) {
-        let value = portfolioValue;
-        const path: number[] = [value];
-
-        // Geometric Brownian Motion: S(t) = S(0) * exp((μ - σ²/2)t + σ√t * Z)
-        for (let day = 0; day < timeHorizon; day++) {
-          const Z = randomNormal();
-          const drift = (mu - 0.5 * sigma * sigma);
-          const diffusion = sigma * Z;
-          value = value * Math.exp(drift + diffusion);
-          path.push(value);
-        }
-
-        finalValues.push(value);
-        
-        // Keep a few sample paths for visualization
-        if (sim < 5) {
-          samplePaths.push(path);
-        }
+    // Terminate existing worker if any
+    workerRef.current?.terminate();
+    
+    // Create new worker - runs simulation off main thread
+    const worker = new Worker(
+      new URL('../../workers/monteCarloWorker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    workerRef.current = worker;
+    
+    worker.onmessage = (e) => {
+      if (e.data.type === 'progress') {
+        setProgress(e.data.progress);
+      } else if (e.data.type === 'result') {
+        setResult(e.data.result);
+        setIsRunning(false);
+        setProgress(1);
+      } else if (e.data.type === 'error') {
+        console.error('Worker error:', e.data.error);
+        setIsRunning(false);
       }
-
-      // Sort for percentile calculations
-      finalValues.sort((a, b) => a - b);
-
-      // Calculate VaR (loss at confidence level)
-      const varIndex = Math.floor((1 - confidenceLevel / 100) * numSimulations);
-      const varValue = portfolioValue - finalValues[varIndex];
-
-      // Calculate CVaR (average of losses beyond VaR)
-      const tailValues = finalValues.slice(0, varIndex + 1);
-      const cvarValue = portfolioValue - (tailValues.reduce((a, b) => a + b, 0) / tailValues.length);
-
-      // Calculate percentiles
-      const percentiles: Record<number, number> = {};
-      [1, 5, 10, 25, 50, 75, 90, 95, 99].forEach(p => {
-        const idx = Math.floor(p / 100 * numSimulations);
-        percentiles[p] = finalValues[idx];
-      });
-
-      // Build histogram
-      const minVal = finalValues[0];
-      const maxVal = finalValues[finalValues.length - 1];
-      const numBins = 50;
-      const binWidth = (maxVal - minVal) / numBins;
-      const histogram: { bin: number; count: number }[] = [];
-      
-      for (let i = 0; i < numBins; i++) {
-        const binStart = minVal + i * binWidth;
-        const binEnd = binStart + binWidth;
-        const count = finalValues.filter(v => v >= binStart && v < binEnd).length;
-        histogram.push({ bin: binStart + binWidth / 2, count });
-      }
-
-      setResult({
-        var: varValue,
-        cvar: cvarValue,
-        expectedValue: finalValues.reduce((a, b) => a + b, 0) / numSimulations,
-        minValue: minVal,
-        maxValue: maxVal,
-        percentiles,
-        histogram,
-        samplePaths,
-      });
-
+    };
+    
+    worker.onerror = (error) => {
+      console.error('Worker failed:', error);
       setIsRunning(false);
-    }, 50);
+    };
+    
+    // Send config to worker
+    worker.postMessage(config);
   }, [config]);
 
   const updateConfig = <K extends keyof SimulationConfig>(key: K, value: SimulationConfig[K]) => {
@@ -147,14 +96,31 @@ export function MonteCarloVaR() {
           </svg>
           Monte Carlo VaR Simulator
         </h3>
-        <button
-          onClick={runSimulation}
-          disabled={isRunning}
-          className="px-4 py-1.5 bg-neon-red/20 border border-neon-red text-neon-red rounded font-medium hover:bg-neon-red/30 transition-colors disabled:opacity-50"
-        >
-          {isRunning ? 'Simulating...' : `Run ${config.numSimulations.toLocaleString()} Paths`}
-        </button>
+        <div className="flex items-center gap-2">
+          {isRunning && (
+            <div className="text-xs text-gray-400">
+              {Math.round(progress * 100)}%
+            </div>
+          )}
+          <button
+            onClick={runSimulation}
+            disabled={isRunning}
+            className="px-4 py-1.5 bg-neon-red/20 border border-neon-red text-neon-red rounded font-medium hover:bg-neon-red/30 transition-colors disabled:opacity-50"
+          >
+            {isRunning ? 'Simulating...' : `Run ${config.numSimulations.toLocaleString()} Paths`}
+          </button>
+        </div>
       </div>
+
+      {/* Progress bar when running */}
+      {isRunning && (
+        <div className="mb-4 h-1 bg-dark-700 rounded overflow-hidden">
+          <div 
+            className="h-full bg-neon-red transition-all duration-200"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      )}
 
       {/* Configuration */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
@@ -226,6 +192,7 @@ export function MonteCarloVaR() {
       {/* Annualized params note */}
       <div className="text-xs text-gray-500 mb-4">
         Annualized: Return ≈ {annualizedReturn.toFixed(1)}%, Volatility ≈ {annualizedVol.toFixed(1)}%
+        <span className="ml-2 text-neon-cyan">• Runs in Web Worker (non-blocking)</span>
       </div>
 
       {/* Results */}

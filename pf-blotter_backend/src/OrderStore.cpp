@@ -5,7 +5,8 @@
 namespace qfblotter {
 
 void OrderStore::upsert(const OrderRecord& record) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    // Exclusive lock for write operations
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     auto it = orders_.find(record.clOrdId);
     if (it == orders_.end()) {
         orders_.emplace(record.clOrdId, record);
@@ -17,7 +18,7 @@ void OrderStore::upsert(const OrderRecord& record) {
 
 void OrderStore::updateStatus(const std::string& clOrdId, const std::string& status,
                               int leavesQty, int cumQty, double avgPx) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     auto it = orders_.find(clOrdId);
     if (it == orders_.end()) {
         return;
@@ -29,7 +30,7 @@ void OrderStore::updateStatus(const std::string& clOrdId, const std::string& sta
 }
 
 void OrderStore::reject(const std::string& clOrdId, const std::string& reason) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     auto it = orders_.find(clOrdId);
     if (it == orders_.end()) {
         return;
@@ -39,7 +40,7 @@ void OrderStore::reject(const std::string& clOrdId, const std::string& reason) {
 }
 
 void OrderStore::remove(const std::string& clOrdId) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     orders_.erase(clOrdId);
     orderIndex_.erase(
         std::remove(orderIndex_.begin(), orderIndex_.end(), clOrdId),
@@ -47,7 +48,8 @@ void OrderStore::remove(const std::string& clOrdId) {
 }
 
 std::optional<OrderRecord> OrderStore::get(const std::string& clOrdId) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    // Shared lock for read operations - multiple readers allowed
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     auto it = orders_.find(clOrdId);
     if (it == orders_.end()) {
         return std::nullopt;
@@ -56,13 +58,14 @@ std::optional<OrderRecord> OrderStore::get(const std::string& clOrdId) const {
 }
 
 bool OrderStore::exists(const std::string& clOrdId) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     return orders_.find(clOrdId) != orders_.end();
 }
 
 std::vector<OrderRecord> OrderStore::getOpenOrders() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     std::vector<OrderRecord> result;
+    result.reserve(orders_.size() / 2); // Estimate half are open
     for (const auto& [id, order] : orders_) {
         if (order.status == "NEW" || order.status == "PARTIAL") {
             result.push_back(order);
@@ -72,7 +75,7 @@ std::vector<OrderRecord> OrderStore::getOpenOrders() const {
 }
 
 OrderStats OrderStore::getStats() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     OrderStats stats;
     
     std::vector<int64_t> latencies;
@@ -87,7 +90,7 @@ OrderStats OrderStore::getStats() const {
         else if (o.status == "REJECTED") stats.rejectedOrders++;
         else if (o.status == "CANCELED") stats.canceledOrders++;
         
-        // Notional calculations
+        // Notional calculations (safe: price and quantity are read together)
         stats.totalNotional += o.price * o.quantity;
         if (o.status == "FILLED" || o.status == "PARTIAL") {
             stats.filledNotional += o.avgPx * o.cumQty;
@@ -103,6 +106,7 @@ OrderStats OrderStore::getStats() const {
     if (!latencies.empty()) {
         std::sort(latencies.begin(), latencies.end());
         
+        // Use int64_t to prevent overflow
         int64_t sum = 0;
         for (auto l : latencies) sum += l;
         stats.avgLatencyUs = sum / static_cast<int64_t>(latencies.size());
@@ -119,7 +123,7 @@ OrderStats OrderStore::getStats() const {
 }
 
 Json OrderStore::snapshotJson() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     Json root = Json::array();
     for (const auto& id : orderIndex_) {
         auto it = orders_.find(id);

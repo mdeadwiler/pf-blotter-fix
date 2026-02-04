@@ -259,6 +259,16 @@ std::vector<uint8_t> WebSocketConnection::encodeFrame(WsOpcode opcode,
 }
 
 void WebSocketConnection::processIncoming(const uint8_t* data, size_t len) {
+    // Security: Limit buffer growth to prevent memory exhaustion
+    constexpr size_t MAX_BUFFER_SIZE = 1024 * 1024;  // 1MB max
+    constexpr size_t MAX_PAYLOAD_SIZE = 64 * 1024;   // 64KB max frame
+    
+    if (buffer_.size() + len > MAX_BUFFER_SIZE) {
+        // Buffer overflow attempt - close connection
+        close(1009, "Message too large");
+        return;
+    }
+    
     buffer_.insert(buffer_.end(), data, data + len);
     
     while (buffer_.size() >= 2) {
@@ -281,8 +291,20 @@ void WebSocketConnection::processIncoming(const uint8_t* data, size_t len) {
             headerLen = 10;
         }
         
+        // Security: Validate payload length
+        if (payloadLen > MAX_PAYLOAD_SIZE) {
+            close(1009, "Frame too large");
+            return;
+        }
+        
         size_t maskLen = masked ? 4 : 0;
         size_t totalLen = headerLen + maskLen + payloadLen;
+        
+        // Security: Check for integer overflow
+        if (totalLen < headerLen || totalLen < payloadLen) {
+            close(1002, "Protocol error");
+            return;
+        }
         
         if (buffer_.size() < totalLen) return;
         

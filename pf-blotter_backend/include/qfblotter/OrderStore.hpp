@@ -3,6 +3,7 @@
 #include <chrono>
 #include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -69,7 +70,10 @@ public:
     std::string snapshotString() const;
 
 private:
-    mutable std::mutex mutex_;
+    // Reader-writer lock: multiple readers OR single writer
+    // Readers (get, exists, getOpenOrders, getStats, snapshot) don't block each other
+    // Writers (upsert, updateStatus, reject, remove) get exclusive access
+    mutable std::shared_mutex mutex_;
     std::unordered_map<std::string, OrderRecord> orders_;
     std::vector<std::string> orderIndex_;
 };
