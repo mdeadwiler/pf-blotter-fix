@@ -240,9 +240,8 @@ public:
             return httplib::Server::HandlerResponse::Unhandled;  // Continue to actual handler
         });
 
-        // Handle CORS preflight
-        server_.Options(".*", [this](const httplib::Request& req, httplib::Response& res) {
-            setCorsHeaders(req, res);
+        // Handle CORS preflight (headers already set by pre_routing_handler)
+        server_.Options(".*", [](const httplib::Request&, httplib::Response& res) {
             res.set_content("", "text/plain");
         });
 
