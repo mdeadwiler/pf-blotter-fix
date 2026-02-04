@@ -1,18 +1,27 @@
 // API configuration
-// In production (Docker), nginx proxies /api/* and /events to backend
+// In production (Docker/Render), configure via VITE_API_URL
 
 const isDev = import.meta.env.DEV;
-const apiUrl = import.meta.env.VITE_API_URL;
+const rawApiUrl = import.meta.env.VITE_API_URL || '';
+
+// Normalize API URL - add https:// if missing (Render provides just hostname)
+const normalizeUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://${url}`;
+};
+
+const apiUrl = normalizeUrl(rawApiUrl);
 
 export const API_CONFIG = {
   // Backend URL
   // - Dev: direct to localhost:8080
-  // - Docker: nginx proxies /api/* to backend:8080
+  // - Production: full URL from VITE_API_URL
   baseUrl: isDev ? 'http://localhost:8080' : (apiUrl || '/api'),
   
   // SSE endpoint
   // - Dev: direct connection
-  // - Docker: nginx proxies /events to backend
+  // - Production: backend URL + /events
   sseUrl: isDev ? 'http://localhost:8080/events' : (apiUrl ? `${apiUrl}/events` : '/events'),
   
   // Endpoints

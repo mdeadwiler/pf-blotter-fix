@@ -16,8 +16,9 @@ services:
   - type: web
     name: pf-blotter-frontend
     runtime: static
-    buildCommand: cd pf-blotter_frontend && npm ci && npm run build
-    staticPublishPath: pf-blotter_frontend/dist
+    rootDir: pf-blotter_frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
     headers:
       - path: /*
         name: X-Content-Type-Options
