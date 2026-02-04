@@ -28,10 +28,17 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 - **Real-Time Execution** - Automated order submission
 
 ### Real-Time Data
-- **Live Streaming** - Server-Sent Events (SSE) for order updates
+- **WebSocket Support** - RFC 6455 implementation for sub-millisecond latency
+- **SSE Fallback** - Graceful degradation to Server-Sent Events
 - **Order Book Visualization** - Simulated bid/ask depth chart
 - **Market Data Feed** - Live price ticks streaming at 4Hz
 - **Realistic Prices** - 35+ tickers with approximate real-world starting prices
+
+### Backtesting Engine
+- **Strategy Simulation** - Run algos against synthetic historical data
+- **Key Metrics** - Sharpe ratio, max drawdown, win rate, profit factor
+- **Equity Curve** - Visual P&L progression over time
+- **Configurable Parameters** - Capital, volatility, periods
 
 ### Analytics
 - **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)

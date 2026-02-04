@@ -14,6 +14,7 @@ import { MarketDataTicker } from './MarketDataTicker';
 import { PositionTracker } from './PositionTracker';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { AlgoPanel } from './AlgoPanel';
+import { BacktestPanel } from './BacktestPanel';
 
 interface DashboardProps {
   user: User;
@@ -240,6 +241,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Algo Trading Panel */}
         <AlgoPanel />
+
+        {/* Backtesting Panel */}
+        <BacktestPanel />
 
         {/* Keyboard shortcuts help */}
         <div className="mt-6 bg-dark-800/50 rounded-lg p-4 border border-dark-600">

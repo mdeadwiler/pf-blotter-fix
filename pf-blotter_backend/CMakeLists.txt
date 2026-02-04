@@ -28,6 +28,7 @@ add_library(qf_core
     src/HttpServer.cpp
     src/AuditLog.cpp
     src/Persistence.cpp
+    src/WebSocket.cpp
 )
 
 target_include_directories(qf_core PUBLIC
