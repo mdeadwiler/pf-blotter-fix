@@ -62,6 +62,8 @@ std::string AuditLog::eventTypeToString(EventType type) const {
         case EventType::ORDER_REJECTED: return "ORDER_REJECTED";
         case EventType::ORDER_CANCELED: return "ORDER_CANCELED";
         case EventType::ORDER_CANCEL_REJECTED: return "CANCEL_REJECTED";
+        case EventType::ORDER_REPLACED: return "ORDER_REPLACED";
+        case EventType::ORDER_REPLACE_REJECTED: return "REPLACE_REJECTED";
         case EventType::SYSTEM_START: return "SYS_START";
         case EventType::SYSTEM_STOP: return "SYS_STOP";
         case EventType::FIX_SESSION_LOGON: return "FIX_LOGON";

@@ -18,6 +18,8 @@ public:
         ORDER_REJECTED,
         ORDER_CANCELED,
         ORDER_CANCEL_REJECTED,
+        ORDER_REPLACED,      // Order amendment
+        ORDER_REPLACE_REJECTED,
         SYSTEM_START,
         SYSTEM_STOP,
         FIX_SESSION_LOGON,

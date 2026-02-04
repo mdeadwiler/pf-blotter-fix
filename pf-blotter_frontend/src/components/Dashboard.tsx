@@ -13,6 +13,7 @@ import { PerformanceMetrics } from './PerformanceMetrics';
 import { MarketDataTicker } from './MarketDataTicker';
 import { PositionTracker } from './PositionTracker';
 import { LoadingSkeleton } from './LoadingSkeleton';
+import { AlgoPanel } from './AlgoPanel';
 
 interface DashboardProps {
   user: User;
@@ -236,6 +237,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Position Tracker */}
         <PositionTracker orders={orders} />
+
+        {/* Algo Trading Panel */}
+        <AlgoPanel />
 
         {/* Keyboard shortcuts help */}
         <div className="mt-6 bg-dark-800/50 rounded-lg p-4 border border-dark-600">

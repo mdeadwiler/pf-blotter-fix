@@ -9,6 +9,7 @@ import {
   getSideClass,
 } from '../utils/format';
 import { API_CONFIG } from '../utils/config';
+import { AmendModal } from './AmendModal';
 
 interface BlotterProps {
   orders: Order[];
@@ -26,11 +27,12 @@ const COLUMNS = [
   { key: 'avgPx', label: 'Avg Px', width: 'w-24', align: 'text-right' },
   { key: 'rejectReason', label: 'Reject Reason', width: 'w-40' },
   { key: 'transactTime', label: 'Time', width: 'w-24' },
-  { key: 'actions', label: '', width: 'w-20' },
+  { key: 'actions', label: '', width: 'w-32' },
 ] as const;
 
 export function Blotter({ orders }: BlotterProps) {
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [amendingOrder, setAmendingOrder] = useState<Order | null>(null);
   const isMountedRef = useRef(true);
   
   // Track mount status for safe state updates
@@ -104,14 +106,24 @@ export function Blotter({ orders }: BlotterProps) {
         );
       case 'actions':
         return canCancel(order.status) ? (
-          <button
-            onClick={() => handleCancel(order.clOrdId)}
-            disabled={cancelingId === order.clOrdId}
-            className="px-2 py-1 text-xs bg-neon-red/20 border border-neon-red/50 text-neon-red 
-                     rounded hover:bg-neon-red/30 transition-colors disabled:opacity-50"
-          >
-            {cancelingId === order.clOrdId ? '...' : 'Cancel'}
-          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setAmendingOrder(order)}
+              className="px-2 py-1 text-xs bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan 
+                       rounded hover:bg-neon-cyan/30 transition-colors"
+              title="Amend order"
+            >
+              Amend
+            </button>
+            <button
+              onClick={() => handleCancel(order.clOrdId)}
+              disabled={cancelingId === order.clOrdId}
+              className="px-2 py-1 text-xs bg-neon-red/20 border border-neon-red/50 text-neon-red 
+                       rounded hover:bg-neon-red/30 transition-colors disabled:opacity-50"
+            >
+              {cancelingId === order.clOrdId ? '...' : 'Cancel'}
+            </button>
+          </div>
         ) : null;
       default:
         return order[column.key as keyof Order] || '-';
@@ -143,44 +155,55 @@ export function Blotter({ orders }: BlotterProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-dark-500">
-            {COLUMNS.map((col) => (
-              <th
-                key={col.key}
-                className={`px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider ${
-                  col.width
-                } ${'align' in col ? col.align : ''}`}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-dark-600">
-          {displayOrders.map((order, index) => (
-            <tr
-              key={order.clOrdId}
-              className={`hover:bg-dark-600/50 transition-colors ${
-                index === 0 ? 'animate-fade-in' : ''
-              }`}
-            >
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-dark-500">
               {COLUMNS.map((col) => (
-                <td
+                <th
                   key={col.key}
-                  className={`px-3 py-2.5 whitespace-nowrap ${col.width} ${
-                    'align' in col ? col.align : ''
-                  }`}
+                  className={`px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider ${
+                    col.width
+                  } ${'align' in col ? col.align : ''}`}
                 >
-                  {renderCell(order, col)}
-                </td>
+                  {col.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-dark-600">
+            {displayOrders.map((order, index) => (
+              <tr
+                key={order.clOrdId}
+                className={`hover:bg-dark-600/50 transition-colors ${
+                  index === 0 ? 'animate-fade-in' : ''
+                }`}
+              >
+                {COLUMNS.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-3 py-2.5 whitespace-nowrap ${col.width} ${
+                      'align' in col ? col.align : ''
+                    }`}
+                  >
+                    {renderCell(order, col)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Amend Modal */}
+      {amendingOrder && (
+        <AmendModal
+          order={amendingOrder}
+          onClose={() => setAmendingOrder(null)}
+          onSuccess={() => {}}
+        />
+      )}
+    </>
   );
 }

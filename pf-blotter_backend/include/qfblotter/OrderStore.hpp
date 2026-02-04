@@ -54,6 +54,7 @@ public:
     void updateStatus(const std::string& clOrdId, const std::string& status,
                       int leavesQty, int cumQty, double avgPx);
     void reject(const std::string& clOrdId, const std::string& reason);
+    void remove(const std::string& clOrdId);
 
     std::optional<OrderRecord> get(const std::string& clOrdId) const;
     bool exists(const std::string& clOrdId) const;

@@ -38,6 +38,14 @@ void OrderStore::reject(const std::string& clOrdId, const std::string& reason) {
     it->second.rejectReason = reason;
 }
 
+void OrderStore::remove(const std::string& clOrdId) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    orders_.erase(clOrdId);
+    orderIndex_.erase(
+        std::remove(orderIndex_.begin(), orderIndex_.end(), clOrdId),
+        orderIndex_.end());
+}
+
 std::optional<OrderRecord> OrderStore::get(const std::string& clOrdId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = orders_.find(clOrdId);

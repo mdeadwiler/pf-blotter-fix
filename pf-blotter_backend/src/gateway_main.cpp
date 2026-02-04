@@ -31,6 +31,7 @@ void signalHandler(int signum) {
 #include "qfblotter/Logger.hpp"
 #include "qfblotter/MarketSim.hpp"
 #include "qfblotter/OrderStore.hpp"
+#include "qfblotter/Persistence.hpp"
 
 namespace {
 
@@ -177,6 +178,18 @@ int main(int argc, char** argv) {
         qfblotter::OrderStore store;
         qfblotter::MarketSim market(42);
         qfblotter::AuditLog audit("config/log/audit.log");
+        
+        // Persistence layer - saves orders every 5 seconds and on shutdown
+        qfblotter::PersistenceManager persistence("data/orders.json", 5);
+        
+        // Load existing orders from last session
+        int loadedOrders = persistence.load([&store](const qfblotter::OrderRecord& record) {
+            store.upsert(record);
+        });
+        if (loadedOrders > 0) {
+            std::cout << "[GATEWAY] Recovered " << loadedOrders << " orders from previous session" << std::endl;
+        }
+        
         qfblotter::HttpServer http(httpPort, [&store]() { return store.snapshotString(); });
         
         audit.logSystemEvent("GATEWAY_START", "Gateway starting on port " + std::to_string(httpPort));
@@ -310,6 +323,85 @@ int main(int argc, char** argv) {
             return true;
         });
 
+        // Amend handler for order modifications
+        http.setAmendHandler([&](const qfblotter::AmendRequest& req, std::string& errorMsg) -> bool {
+            auto existing = store.get(req.origClOrdId);
+            if (!existing.has_value()) {
+                errorMsg = "Unknown order: " + req.origClOrdId;
+                return false;
+            }
+
+            auto record = existing.value();
+            
+            // Validate order state
+            if (record.status == "FILLED") {
+                errorMsg = "Cannot amend filled order";
+                return false;
+            }
+            if (record.status == "CANCELED") {
+                errorMsg = "Cannot amend canceled order";
+                return false;
+            }
+            if (record.status == "REJECTED") {
+                errorMsg = "Cannot amend rejected order";
+                return false;
+            }
+
+            // Apply amendments
+            bool amended = false;
+            std::string amendDetails;
+            
+            if (req.newQuantity > 0 && req.newQuantity != record.quantity) {
+                // Can only reduce quantity, not increase
+                if (req.newQuantity > record.quantity) {
+                    errorMsg = "Cannot increase order quantity (only reduce)";
+                    return false;
+                }
+                if (req.newQuantity <= record.cumQty) {
+                    errorMsg = "New quantity must be greater than already filled quantity";
+                    return false;
+                }
+                amendDetails += "qty:" + std::to_string(record.quantity) + "->" + std::to_string(req.newQuantity);
+                record.quantity = req.newQuantity;
+                record.leavesQty = req.newQuantity - record.cumQty;
+                amended = true;
+            }
+            
+            if (req.newPrice > 0.0 && std::abs(req.newPrice - record.price) > 0.0001) {
+                // Validate notional
+                double newNotional = record.leavesQty * req.newPrice;
+                if (newNotional > MAX_NOTIONAL) {
+                    errorMsg = "Amended notional exceeds limit";
+                    return false;
+                }
+                if (!amendDetails.empty()) amendDetails += ",";
+                amendDetails += "px:" + std::to_string(record.price) + "->" + std::to_string(req.newPrice);
+                record.price = req.newPrice;
+                amended = true;
+            }
+
+            if (!amended) {
+                errorMsg = "No changes specified";
+                return false;
+            }
+
+            // Update the order with new clOrdId
+            record.clOrdId = req.clOrdId;
+            record.transactTime = utc_now_iso();
+            store.upsert(record);
+            
+            // Remove old order reference and add new
+            if (req.clOrdId != req.origClOrdId) {
+                store.remove(req.origClOrdId);
+            }
+            
+            audit.log(qfblotter::AuditLog::EventType::ORDER_REPLACED, req.origClOrdId,
+                "newClOrdId=" + req.clOrdId + "," + amendDetails);
+            
+            http.publishEvent(store.snapshotString());
+            return true;
+        });
+
         // Stats provider - returns JSON performance metrics
         http.setStatsProvider([&store]() -> std::string {
             auto stats = store.getStats();
@@ -368,6 +460,7 @@ int main(int argc, char** argv) {
         http.start();
         fillSim.start();
         marketFeed.start();
+        persistence.start(store);  // Start background persistence
         acceptor.start();
         // Register signal handlers for graceful shutdown
         std::signal(SIGINT, signalHandler);
@@ -387,6 +480,7 @@ int main(int argc, char** argv) {
         
         std::cout << "[GATEWAY] Shutdown signal received." << std::endl;
         audit.logSystemEvent("GATEWAY_STOP", "Gateway shutting down");
+        persistence.stop();  // Save orders before shutdown
         acceptor.stop();
         marketFeed.stop();
         fillSim.stop();

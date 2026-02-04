@@ -13,11 +13,19 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 ## Features
 
 ### Trading Engine
-- **FIX 4.4 Protocol** - Full NewOrderSingle, OrderCancelRequest, ExecutionReport support
+- **FIX 4.4 Protocol** - Full NewOrderSingle, OrderCancelRequest, OrderCancelReplaceRequest, ExecutionReport
 - **Market & Limit Orders** - Market orders fill instantly at current price
+- **Order Amendment** - Modify price/quantity of open orders (cancel/replace)
 - **Partial Fills** - Realistic execution simulation with chunked fills
 - **Pre-Trade Risk Controls** - Max quantity (10,000), max notional ($1M), duplicate detection
 - **Rate Limiting** - 60 orders/min, 30 cancels/min per IP (DOS protection)
+- **Persistence Layer** - Orders saved to JSON, recovered on restart
+
+### Algorithmic Trading
+- **Mean Reversion Strategy** - Buys below SMA, sells above SMA
+- **Momentum Strategy** - Follows trend direction
+- **Configurable Parameters** - Symbol, order size, threshold %
+- **Real-Time Execution** - Automated order submission
 
 ### Real-Time Data
 - **Live Streaming** - Server-Sent Events (SSE) for order updates
@@ -29,6 +37,7 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 - **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)
 - **Position Tracking** - Real-time P&L calculation per symbol
 - **Audit Log** - Append-only compliance logging
+- **Algo Statistics** - Trade count, position, signal history
 
 ### UX Polish
 - **Toast Notifications** - Visual feedback on order fills/rejects
