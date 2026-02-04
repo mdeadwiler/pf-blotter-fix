@@ -416,4 +416,7 @@ See [README.md](./README.md) for setup instructions.
 
 ## Contact
 
-Built by Marquise Deadwiler | [GitHub](https://github.com/mdeadwiler)
+Built by **Marquise Deadwiler**
+
+[![GitHub](https://img.shields.io/badge/GitHub-mdeadwiler-181717?style=flat&logo=github)](https://github.com/mdeadwiler)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-marquisedeadwiler-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/marquisedeadwiler/)

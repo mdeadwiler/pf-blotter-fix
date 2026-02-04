@@ -171,4 +171,7 @@ MIT
 
 ## Author
 
-Built by [Marquise Deadwiler](https://github.com/mdeadwiler) as a portfolio project demonstrating quantitative development skills.
+Built by **Marquise Deadwiler**
+
+[![GitHub](https://img.shields.io/badge/GitHub-mdeadwiler-181717?style=flat&logo=github)](https://github.com/mdeadwiler)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-marquisedeadwiler-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/marquisedeadwiler/)
