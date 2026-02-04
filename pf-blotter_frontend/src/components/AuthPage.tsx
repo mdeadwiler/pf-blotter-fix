@@ -67,7 +67,34 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
           <h1 className="text-4xl font-bold text-neon-cyan neon-text mb-2">
             QuantBlotterSim
           </h1>
-          <p className="text-gray-400">FIX 4.4 Order Gateway Simulator & Live Blotter</p>
+          <p className="text-gray-400 mb-6">FIX 4.4 Order Gateway Simulator & Live Blotter</p>
+          
+          <div className="max-w-2xl mx-auto bg-dark-800/50 rounded-lg p-4 border border-dark-600">
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Ever wondered how Wall Street's trading systems handle orders in real-time? 
+              This is your playground. Submit buy/sell orders, watch them fill (or partially fill), 
+              track your P&L, and see the order book dance—all powered by the same FIX protocol 
+              the pros use. No real money, just real mechanics.
+            </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-neon-green rounded-full"></span>
+                Submit orders
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-neon-cyan rounded-full"></span>
+                Watch live fills
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-neon-yellow rounded-full"></span>
+                Track positions
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-neon-red rounded-full"></span>
+                Cancel anytime
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Auth containers */}
@@ -211,7 +238,7 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
 
         {/* Footer */}
         <p className="text-center text-gray-600 text-sm mt-8">
-          Demo authentication • Data stored locally in browser
+          Built with C++, QuickFIX & React • Your data stays in your browser
         </p>
       </div>
     </div>
