@@ -22,10 +22,11 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 - **Persistence Layer** - Orders saved to JSON, recovered on restart
 
 ### Algorithmic Trading
-- **Mean Reversion Strategy** - Buys below SMA, sells above SMA
-- **Momentum Strategy** - Follows trend direction
-- **Configurable Parameters** - Symbol, order size, threshold %
-- **Real-Time Execution** - Automated order submission
+- **Execution Algorithms** - VWAP, TWAP with configurable slices
+- **Technical Strategies** - Mean Reversion, Momentum, Bollinger Bands, RSI, Breakout
+- **Statistical Arbitrage** - Pairs trading with z-score signals
+- **Risk Management** - Stop-loss, take-profit, position limits
+- **Real-Time Execution** - Automated order submission with live indicators
 
 ### Real-Time Data
 - **WebSocket Support** - RFC 6455 implementation for sub-millisecond latency
@@ -34,11 +35,12 @@ A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infra
 - **Market Data Feed** - Live price ticks streaming at 4Hz
 - **Realistic Prices** - 35+ tickers with approximate real-world starting prices
 
-### Backtesting Engine
-- **Strategy Simulation** - Run algos against synthetic historical data
-- **Key Metrics** - Sharpe ratio, max drawdown, win rate, profit factor
-- **Equity Curve** - Visual P&L progression over time
-- **Configurable Parameters** - Capital, volatility, periods
+### Professional Backtesting Engine
+- **Risk-Adjusted Metrics** - Sharpe, Sortino, Calmar, Information Ratio, Treynor
+- **Risk Metrics** - VaR 95%, CVaR (Expected Shortfall), Beta, Alpha
+- **Trade Statistics** - Win rate, profit factor, payoff ratio, avg win/loss
+- **Cost Modeling** - Commission per trade, slippage in basis points
+- **Equity & Drawdown Curves** - Visual P&L and risk progression
 
 ### Analytics
 - **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)

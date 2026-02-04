@@ -15,6 +15,8 @@ import { PositionTracker } from './PositionTracker';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { AlgoPanel } from './AlgoPanel';
 import { BacktestPanel } from './BacktestPanel';
+import { AdvancedAlgoPanel } from './AdvancedAlgoPanel';
+import { AdvancedBacktester } from './AdvancedBacktester';
 
 interface DashboardProps {
   user: User;
@@ -239,11 +241,20 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         {/* Position Tracker */}
         <PositionTracker orders={orders} />
 
-        {/* Algo Trading Panel */}
-        <AlgoPanel />
+        {/* Advanced Algo Trading */}
+        <AdvancedAlgoPanel />
 
-        {/* Backtesting Panel */}
-        <BacktestPanel />
+        {/* Professional Backtester */}
+        <AdvancedBacktester />
+
+        {/* Simple Algo Trading (collapsed by default) */}
+        <details className="mt-6">
+          <summary className="cursor-pointer text-gray-400 hover:text-white text-sm">
+            Simple Strategies (Basic)
+          </summary>
+          <AlgoPanel />
+          <BacktestPanel />
+        </details>
 
         {/* Keyboard shortcuts help */}
         <div className="mt-6 bg-dark-800/50 rounded-lg p-4 border border-dark-600">
