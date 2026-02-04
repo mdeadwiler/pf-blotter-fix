@@ -74,7 +74,7 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
               Ever wondered how Wall Street's trading systems handle orders in real-time? 
               This is your playground. Submit buy/sell orders, watch them fill (or partially fill), 
               track your P&L, and see the order book dance—all powered by the same FIX protocol 
-              the pros use. No real money, just real mechanics.
+              the pros use.
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-gray-500">
               <span className="flex items-center gap-1">
@@ -93,6 +93,20 @@ export function AuthPage({ onLogin, onSignup, error, isLoading }: AuthPageProps)
                 <span className="w-2 h-2 bg-neon-red rounded-full"></span>
                 Cancel anytime
               </span>
+            </div>
+          </div>
+          
+          {/* Simulation disclaimer */}
+          <div className="max-w-2xl mx-auto mt-4 bg-neon-yellow/10 rounded-lg p-3 border border-neon-yellow/30">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 text-neon-yellow flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-xs text-gray-400">
+                <span className="text-neon-yellow font-medium">Educational Simulator:</span>{' '}
+                All prices are <strong className="text-gray-300">simulated</strong> and do not reflect real market data. 
+                No real money is involved. This tool is for learning FIX protocol mechanics only—not for actual trading decisions.
+              </div>
             </div>
           </div>
         </div>
