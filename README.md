@@ -1,19 +1,41 @@
-# PF-Blotter
+# QuantBlotterSim
 
 A production-grade FIX 4.4 order gateway simulator demonstrating quant-dev infrastructure skills.
 
+## Live Demo
+
+**Try it now:** [https://quantblottersim.onrender.com](https://quantblottersim.onrender.com)
+
+> Submit orders, watch real-time fills, track P&L—all powered by the same FIX protocol Wall Street uses. No signup required to explore.
+
+---
+
 ## Features
 
+### Trading Engine
 - **FIX 4.4 Protocol** - Full NewOrderSingle, OrderCancelRequest, ExecutionReport support
-- **Real-Time Streaming** - Server-Sent Events (SSE) for live order updates
+- **Market & Limit Orders** - Market orders fill instantly at current price
 - **Partial Fills** - Realistic execution simulation with chunked fills
 - **Pre-Trade Risk Controls** - Max quantity (10,000), max notional ($1M), duplicate detection
+- **Rate Limiting** - 60 orders/min, 30 cancels/min per IP (DOS protection)
+
+### Real-Time Data
+- **Live Streaming** - Server-Sent Events (SSE) for order updates
 - **Order Book Visualization** - Simulated bid/ask depth chart
 - **Market Data Feed** - Live price ticks streaming at 4Hz
+- **Realistic Prices** - 35+ tickers with approximate real-world starting prices
+
+### Analytics
 - **Performance Metrics** - Microsecond latency tracking (avg, min, max, p99)
-- **Position Tracking** - P&L calculation per symbol
+- **Position Tracking** - Real-time P&L calculation per symbol
 - **Audit Log** - Append-only compliance logging
-- **Docker Deployment** - One-command containerized setup
+
+### UX Polish
+- **Toast Notifications** - Visual feedback on order fills/rejects
+- **Sound Effects** - Audio cues for fills, rejects, cancels (toggle with S key)
+- **Dark/Light Theme** - Accessibility-friendly themes (toggle with T key)
+- **Keyboard Shortcuts** - N=new order, Esc=unfocus, S=sound, T=theme
+- **Mobile Responsive** - Works on phones and tablets
 
 ## Tech Stack
 
@@ -95,10 +117,12 @@ quit
 | `/snapshot` | GET | Current order state |
 | `/events` | GET | SSE stream for order updates |
 | `/marketdata` | GET | SSE stream for price ticks |
-| `/orderbook` | GET | Order book for symbol |
+| `/orderbook?symbol=` | GET | Order book for symbol |
 | `/stats` | GET | Performance statistics |
-| `/order` | POST | Submit new order |
+| `/market-hours` | GET | Check if market is open (simulated) |
+| `/order` | POST | Submit new order (Limit or Market) |
 | `/cancel` | POST | Cancel order |
+| `/amend` | POST | Amend order price/quantity |
 
 ## Project Structure
 
