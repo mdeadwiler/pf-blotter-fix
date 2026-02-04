@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { API_CONFIG } from '../utils/config';
 import { formatPrice, formatQuantity } from '../utils/format';
 
@@ -19,30 +19,114 @@ interface OrderBookProps {
   symbol?: string;
 }
 
+// Base prices for simulation
+const BASE_PRICES: Record<string, number> = {
+  AAPL: 178.50,
+  GOOGL: 141.25,
+  MSFT: 378.90,
+  AMZN: 178.75,
+  META: 485.20,
+  NVDA: 875.30,
+  TSLA: 248.60,
+};
+
+// Generate simulated order book
+function generateSimulatedBook(symbol: string, lastPriceRef: { current: number }): OrderBookData {
+  // Random walk the last price
+  const priceChange = (Math.random() - 0.5) * 0.2;
+  lastPriceRef.current = lastPriceRef.current + priceChange;
+  const lastPrice = Math.round(lastPriceRef.current * 100) / 100;
+  
+  const spread = Math.round((0.01 + Math.random() * 0.05) * 100) / 100;
+  const midPrice = lastPrice;
+  
+  // Generate bids (below mid)
+  const bids: BookLevel[] = [];
+  for (let i = 0; i < 5; i++) {
+    bids.push({
+      price: Math.round((midPrice - spread/2 - i * 0.05) * 100) / 100,
+      quantity: Math.floor(100 + Math.random() * 900),
+    });
+  }
+  
+  // Generate asks (above mid)
+  const asks: BookLevel[] = [];
+  for (let i = 0; i < 5; i++) {
+    asks.push({
+      price: Math.round((midPrice + spread/2 + i * 0.05) * 100) / 100,
+      quantity: Math.floor(100 + Math.random() * 900),
+    });
+  }
+  
+  return { symbol, lastPrice, spread, bids, asks };
+}
+
 export function OrderBook({ symbol = 'AAPL' }: OrderBookProps) {
   const [book, setBook] = useState<OrderBookData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
+  const lastPriceRef = useRef(BASE_PRICES[symbol] || 150);
+  const mountedRef = useRef(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchOrderBook = useCallback(async () => {
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/orderbook?symbol=${symbol}`);
       if (response.ok) {
         const data = await response.json();
-        setBook(data);
+        if (mountedRef.current) {
+          setBook(data);
+          setIsLive(true);
+          lastPriceRef.current = data.lastPrice;
+        }
+        return true;
       }
-    } catch (err) {
-      console.warn('Failed to fetch order book:', err);
-    } finally {
-      setLoading(false);
+    } catch {
+      // Backend unavailable
     }
+    return false;
+  }, [symbol]);
+
+  // Generate local simulation
+  const generateLocal = useCallback(() => {
+    if (!mountedRef.current) return;
+    const simBook = generateSimulatedBook(symbol, lastPriceRef);
+    setBook(simBook);
+    setIsLive(false);
   }, [symbol]);
 
   useEffect(() => {
-    fetchOrderBook();
-    // Refresh order book every 2 seconds
-    const interval = setInterval(fetchOrderBook, 2000);
-    return () => clearInterval(interval);
-  }, [fetchOrderBook]);
+    mountedRef.current = true;
+    lastPriceRef.current = BASE_PRICES[symbol] || 150;
+    setLoading(true);
+
+    // Try to fetch from backend first
+    const init = async () => {
+      const success = await fetchOrderBook();
+      if (mountedRef.current) {
+        setLoading(false);
+        
+        if (success) {
+          // Backend available - poll every 2 seconds
+          intervalRef.current = setInterval(fetchOrderBook, 2000);
+        } else {
+          // Fall back to local simulation
+          generateLocal();
+          intervalRef.current = setInterval(generateLocal, 1500);
+        }
+      }
+    };
+
+    init();
+
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [symbol, fetchOrderBook, generateLocal]);
 
   if (loading) {
     return (
@@ -83,7 +167,16 @@ export function OrderBook({ symbol = 'AAPL' }: OrderBookProps) {
           </div>
           Order Book
         </h3>
-        <span className="text-sm font-mono text-cyan-400 px-2 py-0.5 bg-cyan-500/10 rounded-lg border border-cyan-500/20">{book.symbol}</span>
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            isLive 
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+          }`}>
+            {isLive ? 'LIVE' : 'SIM'}
+          </span>
+          <span className="text-sm font-mono text-cyan-400 px-2 py-0.5 bg-cyan-500/10 rounded-lg border border-cyan-500/20">{book.symbol}</span>
+        </div>
       </div>
 
       {/* Last Price & Spread */}
@@ -108,7 +201,7 @@ export function OrderBook({ symbol = 'AAPL' }: OrderBookProps) {
             <div className="flex items-center justify-end gap-2">
               <span className="font-mono text-gray-400">{formatQuantity(ask.quantity)}</span>
               <div 
-                className="h-3 bg-red-500/20 rounded-l"
+                className="h-3 bg-red-500/20 rounded-l transition-all duration-300"
                 style={{ width: `${(ask.quantity / maxQty) * 60}%` }}
               />
             </div>
@@ -126,7 +219,7 @@ export function OrderBook({ symbol = 'AAPL' }: OrderBookProps) {
           <div key={`bid-${i}`} className="grid grid-cols-3 items-center text-xs relative py-0.5">
             <div className="flex items-center gap-2">
               <div 
-                className="h-3 bg-emerald-500/20 rounded-r"
+                className="h-3 bg-emerald-500/20 rounded-r transition-all duration-300"
                 style={{ width: `${(bid.quantity / maxQty) * 60}%` }}
               />
               <span className="font-mono text-gray-400">{formatQuantity(bid.quantity)}</span>

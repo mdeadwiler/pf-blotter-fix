@@ -9,26 +9,14 @@ interface UseOrderStreamReturn {
   reconnect: () => void;
 }
 
-// Exponential backoff with jitter (industry standard pattern)
-function calculateBackoffWithJitter(
-  attempt: number,
-  baseMs: number,
-  maxMs: number
-): number {
-  const exponential = Math.min(maxMs, baseMs * Math.pow(2, attempt));
-  const jitter = exponential * 0.3 * Math.random(); // 30% jitter
-  return Math.floor(exponential + jitter);
-}
-
 // Validate that parsed data is a valid orders array
 function isValidOrdersArray(data: unknown): data is Order[] {
   if (!Array.isArray(data)) return false;
-  // Quick sanity check on first item if exists
   if (data.length > 0) {
     const first = data[0];
     return typeof first === 'object' && first !== null && 'clOrdId' in first;
   }
-  return true; // Empty array is valid
+  return true;
 }
 
 // Deep compare orders to avoid unnecessary re-renders
@@ -47,16 +35,16 @@ function ordersEqual(a: Order[], b: Order[]): boolean {
 
 export function useOrderStream(): UseOrderStreamReturn {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
   const [error, setError] = useState<string | null>(null);
   
   const eventSourceRef = useRef<EventSource | null>(null);
-  const retryCountRef = useRef<number>(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
   const ordersRef = useRef<Order[]>([]);
 
-  // Update orders only if changed (prevents re-renders)
+  // Update orders only if changed
   const updateOrders = useCallback((newOrders: Order[]) => {
     if (!ordersEqual(ordersRef.current, newOrders)) {
       ordersRef.current = newOrders;
@@ -64,138 +52,140 @@ export function useOrderStream(): UseOrderStreamReturn {
     }
   }, []);
 
-  // Fetch initial snapshot
-  const fetchSnapshot = useCallback(async () => {
+  // Fetch snapshot from REST API
+  const fetchSnapshot = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.snapshot}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.snapshot}`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) return false;
       const data = await response.json();
       if (mountedRef.current && isValidOrdersArray(data)) {
         updateOrders(data);
+        return true;
       }
-    } catch (err) {
-      console.warn('Failed to fetch snapshot:', err);
-      // Non-fatal - SSE will provide updates
+    } catch {
+      // Network error or timeout
     }
+    return false;
   }, [updateOrders]);
 
-  // Connect to SSE stream
+  // Connect to SSE
   const connect = useCallback(() => {
+    if (!mountedRef.current) return;
+    
     // Clean up existing connection
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
-
-    if (!mountedRef.current) return;
-
-    setConnectionStatus('connecting');
-    setError(null);
-
-    const es = new EventSource(API_CONFIG.sseUrl);
-    eventSourceRef.current = es;
-
-    es.onopen = () => {
-      if (!mountedRef.current) return;
-      setConnectionStatus('connected');
-      setError(null);
-      retryCountRef.current = 0; // Reset retry count on success
-      fetchSnapshot(); // Get initial state
-    };
-
-    // Listen for named "update" events from backend
-    es.addEventListener('update', (event: MessageEvent) => {
-      if (!mountedRef.current) return;
-      
-      const rawData = event.data;
-      if (!rawData || rawData.trim() === '') return;
-      
-      try {
-        const data = JSON.parse(rawData);
-        if (isValidOrdersArray(data)) {
-          updateOrders(data);
-        }
-      } catch {
-        // Parse error - fetch fresh snapshot to recover
-        fetchSnapshot();
-      }
-    });
-
-    // Generic message handler as fallback
-    es.onmessage = (event) => {
-      if (!mountedRef.current) return;
-      
-      const rawData = event.data;
-      if (!rawData || rawData.trim() === '') return;
-      if (rawData.startsWith(':')) return; // SSE comment/keepalive
-      
-      try {
-        const data = JSON.parse(rawData);
-        if (isValidOrdersArray(data)) {
-          updateOrders(data);
-        }
-      } catch {
-        // Silently ignore parse errors
-      }
-    };
-
-    es.onerror = () => {
-      if (!mountedRef.current) return;
-      
-      es.close();
-      eventSourceRef.current = null;
-      setConnectionStatus('disconnected');
-      
-      // Calculate backoff delay
-      const delay = calculateBackoffWithJitter(
-        retryCountRef.current,
-        API_CONFIG.sse.initialRetryDelay,
-        API_CONFIG.sse.maxRetryDelay
-      );
-      
-      retryCountRef.current++;
-      setError(`Reconnecting in ${Math.round(delay / 1000)}s...`);
-      
-      // Schedule reconnection
-      retryTimeoutRef.current = setTimeout(() => {
-        if (mountedRef.current) {
-          connect();
-        }
-      }, delay);
-    };
-  }, [fetchSnapshot, updateOrders]);
-
-  // Manual reconnect
-  const reconnect = useCallback(() => {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
+
+    setConnectionStatus('connecting');
+    setError(null);
+
+    try {
+      const es = new EventSource(API_CONFIG.sseUrl);
+      eventSourceRef.current = es;
+
+      es.onopen = () => {
+        if (!mountedRef.current) return;
+        console.log('[SSE] Connected to', API_CONFIG.sseUrl);
+        setConnectionStatus('connected');
+        setError(null);
+        retryCountRef.current = 0;
+        fetchSnapshot();
+      };
+
+      es.addEventListener('update', (event: MessageEvent) => {
+        if (!mountedRef.current) return;
+        try {
+          const data = JSON.parse(event.data);
+          if (isValidOrdersArray(data)) {
+            updateOrders(data);
+          }
+        } catch {
+          // Parse error - try to recover with snapshot
+          fetchSnapshot();
+        }
+      });
+
+      es.onmessage = (event) => {
+        if (!mountedRef.current) return;
+        const rawData = event.data;
+        if (!rawData || rawData.trim() === '' || rawData.startsWith(':')) return;
+        
+        try {
+          const data = JSON.parse(rawData);
+          if (isValidOrdersArray(data)) {
+            updateOrders(data);
+          }
+        } catch {
+          // Ignore parse errors on generic messages
+        }
+      };
+
+      es.onerror = () => {
+        if (!mountedRef.current) return;
+        
+        console.log('[SSE] Connection error, will retry');
+        es.close();
+        eventSourceRef.current = null;
+        setConnectionStatus('disconnected');
+        
+        // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+        const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
+        retryCountRef.current++;
+        
+        setError(`Connection lost. Retrying in ${Math.round(delay / 1000)}s...`);
+        
+        retryTimeoutRef.current = setTimeout(() => {
+          if (mountedRef.current) {
+            connect();
+          }
+        }, delay);
+      };
+    } catch (err) {
+      console.error('[SSE] Failed to create EventSource:', err);
+      setConnectionStatus('error');
+      setError('Failed to connect to server');
+    }
+  }, [fetchSnapshot, updateOrders]);
+
+  // Manual reconnect
+  const reconnect = useCallback(() => {
     retryCountRef.current = 0;
     connect();
   }, [connect]);
 
-  // Setup and cleanup - only run once on mount
+  // Initial connection
   useEffect(() => {
     mountedRef.current = true;
     
-    // Initial connection
-    connect();
+    // Small delay to ensure component is fully mounted
+    const initTimeout = setTimeout(() => {
+      if (mountedRef.current) {
+        connect();
+      }
+    }, 100);
 
     return () => {
       mountedRef.current = false;
+      clearTimeout(initTimeout);
       
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
-      
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
     };
-  }, []); // Empty deps - only run on mount/unmount
+  }, []); // Empty deps - only run once
 
   return { orders, connectionStatus, error, reconnect };
 }
